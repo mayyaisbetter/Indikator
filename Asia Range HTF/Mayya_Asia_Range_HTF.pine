@@ -61,7 +61,8 @@ general_text                                = input.string("Tiny", "", options =
 g_wm                                        = "Custom Watermark Settings"
 wm_show                                     = input.bool(true, "Tampilkan Watermark", group = g_wm)
 wm_title                                    = input.string("Mayya Trading", "Title Watermark", group = g_wm)
-wm_subtitle                                 = input.string("HTF Candle & Asia Range", "Subtitle Watermark", group = g_wm)
+wm_sub_show                                 = input.bool(true, "Tampilkan Subtitle", inline = "wm_sub", group = g_wm)
+wm_subtitle                                 = input.string("HTF Candle & Asia Range", "", inline = "wm_sub", group = g_wm)
 wm_position                                 = input.string("Bottom Right", "Posisi Watermark", options = ["Top Left", "Top Center", "Top Right", "Middle Left", "Middle Center", "Middle Right", "Bottom Left", "Bottom Center", "Bottom Right"], group = g_wm, tooltip = "Atur penempatan watermark: Atas, Bawah, Kiri, Kanan, atau Tengah")
 wm_font                                     = input.string("Default", "Gaya Font", options = ["Default", "Monospace"], group = g_wm)
 wm_bold                                     = input.bool(true, "Teks Tebal (Bold)", group = g_wm, tooltip = "Mengubah karakter teks menjadi tebal (Bold Mathematical Unicode)")
@@ -1014,12 +1015,14 @@ var table wm_tbl = table.new(position = f_table_pos(wm_position), columns = 1, r
 if wm_show and barstate.islast
     halign = f_text_halign(wm_position)
     title_text = wm_bold ? to_bold(wm_title) : wm_title
-    sub_text   = (wm_bold and wm_subtitle != "") ? to_bold(wm_subtitle) : wm_subtitle
+    sub_text   = (wm_sub_show and wm_bold and wm_subtitle != "") ? to_bold(wm_subtitle) : (wm_sub_show ? wm_subtitle : "")
     
     table.cell(table_id = wm_tbl, column = 0, row = 0, text = title_text, text_color = color.new(wm_title_color, wm_opacity), text_size = text_size(wm_title_size), text_halign = halign, text_font_family = font_style(wm_font))
     
-    if wm_subtitle != ""
+    if wm_sub_show and wm_subtitle != ""
         table.cell(table_id = wm_tbl, column = 0, row = 1, text = sub_text, text_color = color.new(wm_sub_color, wm_opacity), text_size = text_size(wm_sub_size), text_halign = halign, text_font_family = font_style(wm_font))
+    else
+        table.cell(table_id = wm_tbl, column = 0, row = 1, text = "", bgcolor = color.new(color.black, 100))
 
 //#endregion
 
@@ -1234,85 +1237,61 @@ f_set_box_right (_box, _x) =>
         box.set_right(_box, _x)
 
 // Timezone
-i_tz                    = input.string('GMT+0', title='Timezone', options=['GMT-11', 'GMT-10', 'GMT-9', 'GMT-8', 'GMT-7', 'GMT-6', 'GMT-5', 'GMT-4', 'GMT-3', 'GMT-2', 'GMT-1', 'GMT+0', 'GMT+1', 'GMT+2', 'GMT+3', 'GMT+330', 'GMT+4', 'GMT+430', 'GMT+5', 'GMT+530', 'GMT+6', 'GMT+7', 'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12'], group=g0)
+i_tz                    = input.string('UTC+0', title='Timezone', options=['UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5', 'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1', 'UTC+0', 'UTC+1', 'UTC+2', 'UTC+3', 'UTC+4', 'UTC+5', 'UTC+6', 'UTC+7', 'UTC+8', 'UTC+9', 'UTC+10', 'UTC+11', 'UTC+12', 'GMT-11', 'GMT-10', 'GMT-9', 'GMT-8', 'GMT-7', 'GMT-6', 'GMT-5', 'GMT-4', 'GMT-3', 'GMT-2', 'GMT-1', 'GMT+0', 'GMT+1', 'GMT+2', 'GMT+3', 'GMT+330', 'GMT+4', 'GMT+430', 'GMT+5', 'GMT+530', 'GMT+6', 'GMT+7', 'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12'], group=g0)
 i_history_period        = input.int(10, 'History', minval=1, group=g0)
 i_show                  = i_history_period > 0
 i_lookback              = 12 * 60
 
 // Sessions
-i_show_sess1            = input.bool(true, 'Asia Range ', group=g1_01, inline='session1_1') and i_show
-i_sess1_label           = input.string('Asia Range', '', group=g1_01, inline='session1_1')
-i_sess1_color           = input.color(#AE81FF, '', group=g1_01, inline='session1_1')
-i_sess1_barcolor1       = input.color(#AE81FF, '•', group=g1_01, inline='session1_1')
-i_sess1_barcolor2       = input.color(#AE81FF, '', group=g1_01, inline='session1_1')
+i_show_sess1            = input.bool(true, 'Asia ', group=g1_01, inline='session1_1') and i_show
+i_sess1_label           = input.string('Asia', '', group=g1_01, inline='session1_1')
+i_sess1_color           = input.color(color.gray, '', group=g1_01, inline='session1_1')
 i_sess1                 = input.session('0000-0800', 'Jam Sesi Asia', group=g1_01)
-i_sess1_extend          = input.string(option_no, 'Extend', options=[option_yes, option_no], group=g1_01)
-i_sess1_op              = input.string(option_no, 'Opening range', group=g1_01, options=[option_yes, option_no]) != option_no and i_show
-i_sess1_fib             = input.string(option_no, 'Fibonacci levels', group=g1_01, options=[option_yes, option_no]) != option_no
-i_sess1_chart           = input.string(option_no, 'Bar', options=[option_chart_1, option_chart_2, option_no], group=g1_01)
-i_sess1_barcolor        = i_sess1_chart == option_chart_1
-i_sess1_plotcandle      = i_sess1_chart == option_chart_2
+string i_sess1_extend   = option_no
+bool i_sess1_op         = false
+bool i_sess1_fib        = false
+string i_sess1_chart    = option_no
+bool i_sess1_barcolor   = false
+bool i_sess1_plotcandle = false
 
 // Show & Styles
 i_sess_box_style        = input.string('Box', '', options=['Box', 'Background', 'Hamburger', 'Sandwich'], group=g4, inline='box_style')
 i_sess_border_style     = f_border_style(input.string(option_border_style2, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g4, inline='box_style'))
 i_sess_border_width     = input.int(1, '', minval=0, group=g4, inline='box_style')
 i_sess_box_background   = input.bool(true, 'BG color', group=g4, inline='box_style_options')
-i_sess_box_dots         = input.bool(true, 'Dots', group=g4, inline='box_style_options')
-i_sess_end_offset       = input.bool(true, 'Include the latest bar in the Session end', group=g4)
+bool i_sess_box_dots    = false
+int session_end_offset  = 0
 i_sess_bgopacity        = i_sess_box_background ? 94 : 100
 i_sess_bgopacity2       = math.min(i_sess_bgopacity - 4, 100)
 i_sess_border_width    := i_sess_box_style == 'Background' ? 0 : i_sess_border_width
-session_end_offset      = i_sess_end_offset ? 0 : 1
 
 // Labels
-i_label_show            = input.bool(true, '', inline='label_show', group=g6) and i_show
+i_label_show            = input.bool(true, 'Tampilkan Label', group=g6, inline='label_show') and i_show
 i_label_size            = str.lower(input.string('Small', '', options=['Auto', 'Tiny', 'Small', 'Normal', 'Large', 'Huge'], inline='label_show', group=g6))
-i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bottom'], inline='label_show', group=g6))
-i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_show', group=g6))
+i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bottom'], inline='label_pos', group=g6))
+i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g6))
 i_label_position        = f_get_label_position(i_label_position_y, i_label_position_s)
-i_label_format_name     = input.bool(true, 'Name', inline='label_format', group=g6)
-i_label_format_day      = input.bool(false, 'Day', inline='label_format', group=g6)
-i_label_format_price    = input.bool(false, 'Price', inline='label_format', group=g6)
-i_label_format_pips     = input.bool(false, 'Pips', inline='label_format', group=g6)
 
-// Opening range
-i_o_minutes             = input.int(15, title='Periods mins', minval=1, step=1, group=g5)
-i_o_minutes            := math.max(i_o_minutes, timeframe.multiplier + 1)
-i_o_transp              = 50
-i_o_size                = input.string(size.small, 'Label size', options=[size.auto, size.tiny, size.small, size.normal, size.large, size.huge], group=g5)
-i_o_color               = input.string(option_candle_color2, 'Label color   ', options=[option_candle_color1, option_candle_color2], group=g5, inline="op_label_color")
-i_o_label_1             = input.string('price', 'Label text    ', group=g5, inline='op_label', tooltip="Type \"price\" to display the price")
-i_o_label_2             = input.string('price', '', group=g5, inline='op_label')
-i_o_label_color         = input.string('white', '', options=['black', 'white'], group=g5, inline='op_label_color')
-i_o_nowonly             = input.bool(false, 'Current session only', group=g5, inline='op_options')
-i_o_breakout_icon       = input.bool(false, 'Breakout flag', group=g5, inline='op_options')
-i_o_target              = input.bool(false, 'Target lines', group=g5, inline='op_options')
-i_o_target_boxes        = input.bool(false, 'Target boxes', group=g5, inline='op_options')
-
-// Candle
-option_candle_body      = 'OC'
-option_candle_wick      = 'OHLC'
-i_show_candle           = input.bool(false, '', group=g11, inline='candle_display') //and (i_candle_border_width > 0)
-i_candle                = input.string(option_candle_wick, '', options=[option_candle_wick, option_candle_body], group=g11,  inline='candle_display')
-i_candle_border_width   = input.int(1, '', minval=1, group=g11,  inline='candle_display')
-i_candle_color          = input.string(option_candle_color1, '', options=[option_candle_color1, option_candle_color2], group=g11, inline='candle_display')
-i_candle_color_g        = input.color(#A6E22E, '', group=g11, inline='candle_display')
-i_candle_color_r        = input.color(#F92672, '', group=g11, inline='candle_display')
-
-i_candle               := i_show_candle ? i_candle : option_hide
-i_show_candle_wick      = i_candle == option_candle_wick
-i_sess_bgopacity2      := i_show_candle ? 100 : i_sess_bgopacity2
-
-// Fibonacci levels
-i_f_show                = input.bool(true, '', group=g7, inline='fib_display')
-i_f_linestyle           = f_border_style(input.string(option_border_style1, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g7, inline='fib_display'))
-i_f_linewidth           = input.int(1, '', minval=1, group=g7, inline='fib_display')
-i_sess1_fib            := i_f_show ? i_sess1_fib : false
+// Internal definitions for removed features to ensure clean compatibility
+bool i_show_candle           = false
+bool i_show_candle_wick      = false
+int i_o_minutes              = 15
+int i_o_transp               = 50
+string i_o_size              = size.small
+string i_o_color             = option_candle_color2
+string i_o_label_1           = 'price'
+string i_o_label_2           = 'price'
+string i_o_label_color       = 'white'
+bool i_o_nowonly             = false
+bool i_o_breakout_icon       = false
+bool i_o_target              = false
+bool i_o_target_boxes        = false
+int i_f_linewidth            = 1
+i_f_linestyle                = line.style_solid
 
 // Alerts
-i_alert1_show           = input.bool(false, 'Alerts - Sessions stard/end', group=g10)
-i_alert2_show           = input.bool(false, 'Alerts - Opening range breakouts', group=g10)
+i_alert1_show           = input.bool(false, 'Alerts - Sessions start/end', group=g10)
+bool i_alert2_show      = false
 i_alert3_show           = input.bool(false, 'Alerts - Price crossed session\'s High/Low after session closed', group=g10)
 
 // ------------------------
@@ -1324,31 +1303,13 @@ f_render_label (_show, Session data, _is_started, _color, _top, _bottom) =>
     session = data.session()
 
     v_position_y = (i_label_position_y == 'top') ? _top : _bottom
-    v_label = array.new_string()
-    v_chg = _top - _bottom
-
-    if _is_started
-        start_time := time
-
-    if i_label_format_name and not na(data.name)
-        array.push(v_label, data.name)
-
-    if i_label_format_day
-        array.push(v_label, util.get_day(dayofweek(start_time, i_tz)))
-
-    if i_label_format_price
-        array.push(v_label, str.format(fmt_price, v_chg))
-
-    if i_label_format_pips
-        array.push(v_label, str.format(fmt_pips, util.toPips(v_chg)))
-
-    lbl_text = format_text_style(array.join(v_label, icon_separator), general_font)
+    lbl_text = not na(data.name) ? format_text_style(data.name, general_font) : ""
 
     if _show
         if _is_started
             util.clear_labels(data.labels, data.is_extended ? 0 : i_history_period - 1)
 
-            my_label := label.new(bar_index, v_position_y, lbl_text, textcolor=_color, color=TRANSPARENT, size=i_label_size, style=i_label_position, tooltip='Pips', text_font_family=font_style(general_font))
+            my_label := label.new(bar_index, v_position_y, lbl_text, textcolor=_color, color=TRANSPARENT, size=i_label_size, style=i_label_position, tooltip=data.name, text_font_family=font_style(general_font))
 
             array.push(data.labels, my_label)
 
@@ -1812,7 +1773,6 @@ draw (_show, Session data, _extend, _show_fib, _show_op) =>
 
     if i_sess_box_style == 'Box' or i_sess_box_style == 'Background' or i_sess_box_style == 'Candle'
         f_render_session(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
-        f_render_dots(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
 
     else if i_sess_box_style == 'Hamburger'
         f_render_sessionrange(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
@@ -1820,23 +1780,8 @@ draw (_show, Session data, _extend, _show_fib, _show_op) =>
     else if i_sess_box_style == 'Sandwich'
         f_render_sessionrange(_show, data, is_started, is_ended, col, top, bottom, x1, x2, true)
 
-    if i_show_candle
-        f_render_candle(_show, data, is_started, is_ended, col, top, bottom, ohlc.open, x1, x2)
-
     if i_label_show
         f_render_label(_show, data, is_started, col, top, bottom)
-
-    if _show_op
-        f_render_oprange(_show, data, is_started, is_ended, x1, x2, col, max)
-        f_render_current_line(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
-
-    if _show_fib
-        if is_started
-            util.clear_lines(data.fib, data.is_extended ? -1 : i_history_period * 3 - 4)
-
-        f_render_fibonacci(_show, data, is_started, is_ended, x1, x2, col, top, bottom, 0.500, 2, line.style_solid)
-        f_render_fibonacci(_show, data, is_started, is_ended, x1, x2, col, top, bottom, 0.628, i_f_linewidth, i_f_linestyle)
-        f_render_fibonacci(_show, data, is_started, is_ended, x1, x2, col, top, bottom, 0.382, i_f_linewidth, i_f_linestyle)
 
     f_render_limitmessage(_show, data, is_started, is_ended, x1, bottom, _rightbars)
 
@@ -1854,19 +1799,6 @@ var sess1_data = Session.new(i_sess1, tz, i_sess1_label, i_sess1_color).create(i
 
 [is_sess1, sess1_ohlc] = draw(showAsiaRange and i_show_sess1, sess1_data, i_sess1_extend, i_sess1_fib, i_sess1_op)
 
-is_positive_bar         = close > open
-
-color c_barcolor        = na
-color c_plotcandle      = na
-
-c_sess1_barcolor        = (showAsiaRange and is_sess1) ? (is_positive_bar ? i_sess1_barcolor1 : i_sess1_barcolor2) : na
-
-if showAsiaRange and (i_sess1_chart != option_no) and is_sess1
-    c_barcolor         := i_sess1_barcolor   ? c_sess1_barcolor : na
-    c_plotcandle       := i_sess1_plotcandle ? c_sess1_barcolor : na
-
-barcolor(c_barcolor)
-plotcandle(open, high, low, close, color=is_positive_bar ? TRANSPARENT : c_plotcandle, bordercolor=c_plotcandle, wickcolor=c_plotcandle)
 
 ////////////////////
 // Alerts

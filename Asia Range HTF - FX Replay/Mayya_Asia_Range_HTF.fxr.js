@@ -13,16 +13,10 @@ init = () => {
   indicator({ onMainPanel: true, format: 'inherit' });
 
   // --------------------------------------------------------------------------
-  // Watermark Settings
-  // --------------------------------------------------------------------------
-  input.bool('Tampilkan Watermark', true, 'showWatermark', 'Tampilkan info watermark Mayya di chart', 'Watermark');
-  input.bool('Tampilkan Subtitle', true, 'showSubtitle', 'Tampilkan teks subtitle di watermark', 'Watermark');
-
-  // --------------------------------------------------------------------------
   // Asia Range Settings
   // --------------------------------------------------------------------------
-  input.bool('Aktifkan Asia Range', true, 'showAsia', 'Tampilkan box rentang sesi Asia', 'Asia Range');
-  input.session('Jam Sesi Asia', '0000-0800', 'asiaSession', 'Rentang jam sesi format HHMM-HHMM (default: 0000-0800)', 'Asia Range');
+  input.bool('Aktifkan Asia Range', true, 'showAsia', 'Asia Range');
+  input.session('Jam Sesi Asia', '0000-0800', 'asiaSession');
   input.str(
     'Timezone',
     'UTC+0',
@@ -31,27 +25,29 @@ init = () => {
       'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5', 'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1',
       'UTC+0', 'UTC+1', 'UTC+2', 'UTC+3', 'UTC+4', 'UTC+5', 'UTC+6', 'UTC+7', 'UTC+8', 'UTC+9', 'UTC+10', 'UTC+11', 'UTC+12'
     ],
-    'Zona waktu untuk perhitungan waktu sesi Asia',
+    undefined,
     'Asia Range'
   );
-  input.color('Warna Box Asia', color.gray, 'asiaColor', 'Warna box sesi Asia (default: Grey)', 'Asia Range');
-  input.int('Transparansi Background (%)', 85, 'asiaTransparency', 'Tingkat transparansi warna latar belakang box (0-100)', 'Asia Range');
-  input.bool('Tampilkan Garis Tengah (50%)', true, 'showMidline', 'Garis tengah (equilibrium / 50%) pada box Asia', 'Asia Range');
+  input.color('Warna Box Asia', color.gray, 'asiaColor', 'Asia Range');
+  input.int('Transparansi Background (%)', 85, 'asiaTransparency', 0, 100, 1, undefined, 'Asia Range');
+  input.bool('Tampilkan Garis Tengah (50%)', true, 'showMidline', 'Asia Range');
 
   // --------------------------------------------------------------------------
   // Label Settings
   // --------------------------------------------------------------------------
-  input.bool('Tampilkan Label', true, 'showLabel', 'Aktifkan atau nonaktifkan teks label sesi', 'Label Sesi');
-  input.str('Teks Label', 'Asia', 'labelText', undefined, 'Teks label yang ditampilkan pada box sesi Asia', 'Label Sesi');
+  input.bool('Tampilkan Label', true, 'showLabel', 'Label Sesi');
+  input.str('Teks Label', 'Asia', 'labelText', undefined, undefined, 'Label Sesi');
 
   // --------------------------------------------------------------------------
   // HTF Candle Settings (Multi-Timeframe)
   // --------------------------------------------------------------------------
-  input.bool('Tampilkan HTF Candle', false, 'showHtf', 'Tampilkan box candle Higher Timeframe di chart', 'HTF Candle');
-  let htfRes = input.timeframe('HTF Timeframe', '4h', 'htfTf', 'HTF Candle', 'Pilih resolusi HTF (contoh: 1h, 4h, 1D)');
-  mtf.timeframe(htfRes);
-  input.color('Warna Bullish HTF', color.green, 'htfBullColor', 'Warna candle HTF naik (Bullish)', 'HTF Candle');
-  input.color('Warna Bearish HTF', color.red, 'htfBearColor', 'Warna candle HTF turun (Bearish)', 'HTF Candle');
+  input.bool('Tampilkan HTF Candle', false, 'showHtf', 'HTF Candle');
+  input.timeframe('HTF Timeframe', '4h', 'htfTf', 'HTF Candle');
+  if (typeof mtf !== 'undefined' && mtf && typeof mtf.timeframe === 'function') {
+    mtf.timeframe('4h');
+  }
+  input.color('Warna Bullish HTF', color.green, 'htfBullColor', 'HTF Candle');
+  input.color('Warna Bearish HTF', color.red, 'htfBearColor', 'HTF Candle');
 };
 
 // ----------------------------------------------------------------------------
@@ -59,7 +55,6 @@ init = () => {
 // ----------------------------------------------------------------------------
 let currentSession = null;
 let activeBoxId = null;
-let watermarkDrawn = false;
 let lastHtfBarTime = null;
 
 /**
@@ -123,32 +118,7 @@ onTick = (length, _moment, _, ta, inputs) => {
     return;
   }
 
-  // 1. Watermark Info di Chart (Ditampilkan satu kali)
-  if (inputs.showWatermark && !watermarkDrawn && length > 5) {
-    watermarkDrawn = true;
-    const wmText = inputs.showSubtitle
-      ? 'MAYYA\nAsia Range & HTF Candle'
-      : 'MAYYA';
-
-    text(
-      currentBarTime,
-      currentHigh,
-      {
-        color: color.gray,
-        fontsize: 11,
-        bold: true,
-        fillBackground: true,
-        backgroundColor: color.rgba(128, 128, 128, 0.12),
-        backgroundTransparency: 88,
-        drawBorder: true,
-        borderColor: color.rgba(128, 128, 128, 0.35),
-        fixedSize: true
-      },
-      wmText
-    );
-  }
-
-  // 2. Logika Sesi Asia Range
+  // 1. Logika Sesi Asia Range
   if (inputs.showAsia) {
     const tzOffset = getTzMinutes(inputs.asiaTz);
     const sess = parseSessionTime(inputs.asiaSession);
@@ -156,7 +126,7 @@ onTick = (length, _moment, _, ta, inputs) => {
 
     const boxColor = inputs.asiaColor || color.gray;
     const boxTransparency = typeof inputs.asiaTransparency === 'number' ? inputs.asiaTransparency : 85;
-    const labelTitle = inputs.showLabel ? (inputs.labelText || 'Asia') : '';
+    const labelTitle = inputs.showLabel ? (inputs.labelText || 'Asia') : undefined;
 
     const boxStyle = {
       color: boxColor,
@@ -165,8 +135,7 @@ onTick = (length, _moment, _, ta, inputs) => {
       transparency: boxTransparency,
       linewidth: 1,
       extendRight: false,
-      showLabel: inputs.showLabel,
-      text: labelTitle,
+      showLabel: Boolean(inputs.showLabel),
       textColor: boxColor,
       fontSize: 11,
       bold: true,
@@ -214,7 +183,6 @@ onTick = (length, _moment, _, ta, inputs) => {
     } else {
       // Sesi telah selesai
       if (currentSession) {
-        // Hapus box live sementara dan gambar box final definitif
         if (typeof deleteDrawingById === 'function' && activeBoxId) {
           try {
             deleteDrawingById(activeBoxId);
@@ -236,8 +204,8 @@ onTick = (length, _moment, _, ta, inputs) => {
     }
   }
 
-  // 3. Logika Multi-Timeframe (HTF Candle Overlay)
-  if (inputs.showHtf) {
+  // 2. Logika Multi-Timeframe (HTF Candle Overlay)
+  if (inputs.showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
     const htfTime = mtf.time(0);
     if (htfTime && htfTime !== lastHtfBarTime) {
       lastHtfBarTime = htfTime;
@@ -266,25 +234,26 @@ onTick = (length, _moment, _, ta, inputs) => {
             linewidth: 1,
             transparency: 80,
             showLabel: true,
-            text: `HTF ${inputs.htfTf}`,
             textColor: candleColor,
             fontSize: 10,
             bold: true
           },
-          `HTF ${inputs.htfTf}`
+          'HTF Candle'
         );
 
         // Sumbu Candle HTF
-        trendLine(
-          newPoint(prevHtfTime, prevHtfHigh),
-          newPoint(prevHtfTime, Math.max(prevHtfOpen, prevHtfClose)),
-          { linecolor: candleColor, linewidth: 1 }
-        );
-        trendLine(
-          newPoint(prevHtfTime, Math.min(prevHtfOpen, prevHtfClose)),
-          newPoint(prevHtfTime, prevHtfLow),
-          { linecolor: candleColor, linewidth: 1 }
-        );
+        if (typeof newPoint === 'function' && typeof trendLine === 'function') {
+          trendLine(
+            newPoint(prevHtfTime, prevHtfHigh),
+            newPoint(prevHtfTime, Math.max(prevHtfOpen, prevHtfClose)),
+            { linecolor: candleColor, linewidth: 1 }
+          );
+          trendLine(
+            newPoint(prevHtfTime, Math.min(prevHtfOpen, prevHtfClose)),
+            newPoint(prevHtfTime, prevHtfLow),
+            { linecolor: candleColor, linewidth: 1 }
+          );
+        }
       }
     }
   }

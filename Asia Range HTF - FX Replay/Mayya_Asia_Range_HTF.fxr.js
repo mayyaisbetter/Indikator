@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.3.2
+ * Versi     : 1.3.3
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -83,69 +83,45 @@ init = () => {
 
 // ----------------------------------------------------------------------------
 // Global Tracking State (Menampung ID gambar agar bisa dibersihkan & di-update)
-// Menggunakan pendekatan fail-safe multi-scope (globalThis, window, var) agar
-// tidak pernah memicu ReferenceError pada runtime sandbox FX Replay.
+// Menggunakan `var` (bukan `let`) agar variabel di-hoist ke global scope sehingga
+// tetap accessible di dalam eval sandbox FX Replay. Pattern `typeof x !== 'undefined'`
+// digunakan untuk menghindari ReferenceError dan TypeScript strict type error.
 // ----------------------------------------------------------------------------
-if (typeof globalThis !== 'undefined') {
-  if (!Array.isArray(globalThis.__mayyaDrawnIds)) globalThis.__mayyaDrawnIds = [];
-}
-if (typeof window !== 'undefined') {
-  if (!Array.isArray(window.__mayyaDrawnIds)) window.__mayyaDrawnIds = [];
-}
 
-var drawnDrawingIds = (typeof globalThis !== 'undefined' && Array.isArray(globalThis.__mayyaDrawnIds))
-  ? globalThis.__mayyaDrawnIds
-  : (typeof window !== 'undefined' && Array.isArray(window.__mayyaDrawnIds))
-    ? window.__mayyaDrawnIds
-    : [];
+// Deklarasi dengan `var` + self-referential init: aman diulang setiap eval karena
+// var di-hoist, dan `typeof __mayyaDrawnIds` tidak pernah melempar error.
+var __mayyaDrawnIds = (typeof __mayyaDrawnIds !== 'undefined' && Array.isArray(__mayyaDrawnIds))
+  ? __mayyaDrawnIds
+  : [];
 
 /**
- * Mengambil referensi list drawing ID secara aman tanpa ReferenceError
- */
-function getDrawingList() {
-  if (typeof globalThis !== 'undefined' && Array.isArray(globalThis.__mayyaDrawnIds)) {
-    return globalThis.__mayyaDrawnIds;
-  }
-  if (typeof window !== 'undefined' && Array.isArray(window.__mayyaDrawnIds)) {
-    return window.__mayyaDrawnIds;
-  }
-  if (typeof drawnDrawingIds !== 'undefined' && Array.isArray(drawnDrawingIds)) {
-    return drawnDrawingIds;
-  }
-  return [];
-}
-
-/**
- * Membersihkan semua drawing yang pernah dibuat pada tick sebelumnya
+ * Membersihkan semua drawing yang pernah dibuat pada tick sebelumnya.
+ * Menggunakan akses array via `__mayyaDrawnIds` yang ter-hoist ke global scope
+ * oleh deklarasi `var` di atas sehingga tidak pernah undefined.
  */
 function clearOldDrawings() {
   if (typeof deleteDrawingById !== 'function') return;
+  if (typeof __mayyaDrawnIds === 'undefined' || !Array.isArray(__mayyaDrawnIds)) return;
   try {
-    var list = getDrawingList();
-    if (Array.isArray(list) && list.length > 0) {
-      for (var i = 0; i < list.length; i++) {
-        var id = list[i];
-        if (id) {
-          try {
-            deleteDrawingById(id);
-          } catch (err) {}
-        }
+    var len = __mayyaDrawnIds.length;
+    for (var i = 0; i < len; i++) {
+      var id = __mayyaDrawnIds[i];
+      if (id) {
+        try { deleteDrawingById(id); } catch (err) {}
       }
-      list.length = 0;
     }
+    __mayyaDrawnIds.length = 0;
   } catch (e) {}
 }
 
 /**
- * Menyimpan ID drawing ke dalam tracking list
+ * Menyimpan ID drawing ke dalam tracking list.
  */
 function trackDrawing(id) {
   if (!id) return;
+  if (typeof __mayyaDrawnIds === 'undefined' || !Array.isArray(__mayyaDrawnIds)) return;
   try {
-    var list = getDrawingList();
-    if (Array.isArray(list)) {
-      list.push(id);
-    }
+    __mayyaDrawnIds.push(id);
   } catch (e) {}
 }
 

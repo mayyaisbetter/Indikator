@@ -1,0 +1,406 @@
+// This Pine Script®️ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// ©️ Mayya
+
+//@version=6
+indicator("Mayya - HTF & Asia Range Model", shorttitle = "Mayya Asia & HTF", overlay = true, max_lines_count = 500, max_boxes_count = 500, max_labels_count = 500, max_bars_back = 1000)
+
+import boitoki/AwesomeColor/9 as ac
+import boitoki/Utilities/11 as util
+
+// # ========================================================================= #
+// # |   Inputs & Settings                                                   |
+// # ========================================================================= #
+
+//#region Inputs
+
+// --- Modul Master Toggles ---
+g_master                = "Master Toggles"
+show_asia               = input.bool(true, "Tampilkan Asia Range", group = g_master)
+show_htf                = input.bool(true, "Tampilkan HTF Candles", group = g_master)
+
+// --- Modul Asia Range ---
+g_asia                  = "Asia Range Settings"
+asia_session            = input.session("0000-0800", "Jam Sesi Asia", group = g_asia, tooltip = "Jam operasional sesi Asia (default GMT: 00:00 - 08:00)")
+asia_tz                 = input.string("GMT+0", "Timezone", options = ["GMT-11", "GMT-10", "GMT-9", "GMT-8", "GMT-7", "GMT-6", "GMT-5", "GMT-4", "GMT-3", "GMT-2", "GMT-1", "GMT+0", "GMT+1", "GMT+2", "GMT+3", "GMT+4", "GMT+5", "GMT+6", "GMT+7", "GMT+8", "GMT+9", "GMT+10", "GMT+11", "GMT+12"], group = g_asia)
+asia_box_col            = input.color(color.new(#2962FF, 90), "Warna Box Asia", group = g_asia)
+asia_border_col         = input.color(#2962FF, "Warna Border Box", group = g_asia)
+asia_show_hl            = input.bool(true, "Garis High & Low Asia", group = g_asia)
+asia_hi_col             = input.color(#00E676, "Warna Asia High", inline = "hl_col", group = g_asia)
+asia_lo_col             = input.color(#FF5252, "Warna Asia Low", inline = "hl_col", group = g_asia)
+asia_show_eq            = input.bool(true, "Garis 50% Equilibrium (EQ)", group = g_asia)
+asia_eq_col             = input.color(color.new(color.gray, 30), "Warna EQ", group = g_asia)
+asia_extend_bars        = input.int(50, "Panjang Ekstensi Garis (Bar)", minval = 5, maxval = 300, group = g_asia, tooltip = "Berapa bar garis High/Low/EQ diekstensi ke depan setelah sesi Asia tutup")
+asia_detect_sweep       = input.bool(true, "Deteksi Liquidity Sweep Asia", group = g_asia, tooltip = "Tampilkan sinyal saat London atau NY menyapu High/Low Asia")
+asia_history_count      = input.int(5, "Jumlah History Sesi Asia", minval = 1, maxval = 20, group = g_asia)
+
+// --- Modul HTF Candles ---
+g_htf                   = "HTF Candles Settings"
+htf_1_show              = input.bool(true, "HTF I     ", inline = "htf1", group = g_htf)
+htf_1_tf                = input.timeframe("60", "", inline = "htf1", group = g_htf)
+htf_1_number            = input.int(6, "", minval = 1, maxval = 30, inline = "htf1", group = g_htf)
+htf_1_map               = input.bool(true, "Trace LTF", inline = "htf1", group = g_htf, tooltip = "Petakan level HTF 1 ke chart LTF")
+
+htf_2_show              = input.bool(true, "HTF II    ", inline = "htf2", group = g_htf)
+htf_2_tf                = input.timeframe("240", "", inline = "htf2", group = g_htf)
+htf_2_number            = input.int(4, "", minval = 1, maxval = 30, inline = "htf2", group = g_htf)
+htf_2_map               = input.bool(false, "Trace LTF", inline = "htf2", group = g_htf)
+
+htf_3_show              = input.bool(true, "HTF III   ", inline = "htf3", group = g_htf)
+htf_3_tf                = input.timeframe("1D", "", inline = "htf3", group = g_htf)
+htf_3_number            = input.int(3, "", minval = 1, maxval = 30, inline = "htf3", group = g_htf)
+htf_3_map               = input.bool(false, "Trace LTF", inline = "htf3", group = g_htf)
+
+htf_title_position      = input.string("Top", "Posisi Title Timeframe", options = ["Both", "Top", "Bottom"], group = g_htf, tooltip = "Pilih posisi label title timeframe: Di Atas (Top), Di Bawah (Bottom), atau Keduanya (Both)")
+htf_countdown_show      = input.bool(true, "Waktu Mundur Close Candle", group = g_htf, tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
+htf_title_color         = input.color(color.white, "Warna Title Label", inline = "title_opt", group = g_htf)
+
+htf_bull_color          = input.color(#00E676, "Warna Bullish HTF", inline = "htf_colors", group = g_htf)
+htf_bear_color          = input.color(#FF5252, "Warna Bearish HTF", inline = "htf_colors", group = g_htf)
+htf_wick_color          = input.color(color.white, "Warna Wick / Border", inline = "htf_colors", group = g_htf)
+htf_candle_offset       = input.int(10, "Offset dari Bar Terakhir", minval = 1, group = g_htf)
+htf_candle_space        = input.int(2, "Jarak Antar Candle", minval = 1, maxval = 5, group = g_htf)
+htf_candle_width        = input.int(4, "Lebar Body Candle", minval = 2, maxval = 10, group = g_htf)
+
+// --- Trace Lines on LTF ---
+g_trace                 = "Trace Level Lines (LTF)"
+htf_trace_hl_show       = input.bool(true, "Tampilkan High/Low Line", group = g_trace)
+htf_trace_hl_color      = input.color(color.new(color.gray, 40), "Warna H/L Line", group = g_trace)
+
+// --- Branding & Watermark ---
+g_brand                 = "Branding"
+hide_brand              = input.bool(false, "Sembunyikan Watermark", group = g_brand)
+
+//#endregion
+
+// # ========================================================================= #
+// # |   UDTs & Storage Management                                           |
+// # ========================================================================= #
+
+//#region UDTs & Memory Bin
+
+type UDT_Store
+    line[]  lines
+    box[]   boxes
+    label[] labels
+
+var UDT_Store bin = UDT_Store.new(array.new<line>(), array.new<box>(), array.new<label>())
+
+method clean_bin(UDT_Store store) =>
+    for l in store.lines
+        l.delete()
+    for b in store.boxes
+        b.delete()
+    for lbl in store.labels
+        lbl.delete()
+    store.lines.clear()
+    store.boxes.clear()
+    store.labels.clear()
+
+type UDT_AsiaSession
+    int   start_bar
+    int   end_bar
+    float hi
+    float lo
+    float mid
+    box   sess_box
+    line  hi_line
+    line  lo_line
+    line  mid_line
+    bool  hi_swept = false
+    bool  lo_swept = false
+
+var array<UDT_AsiaSession> asia_sessions = array.new<UDT_AsiaSession>()
+
+type UDT_HTFCandle
+    string tf
+    float  o
+    float  c
+    float  h
+    float  l
+    int    ot
+    int    ct
+    int    o_idx
+    int    c_idx
+    int    h_idx
+    int    l_idx
+    int    candle_left
+    int    candle_right
+    float  candle_top
+    float  candle_bottom
+    int    wick_x
+    bool   is_closed
+    bool   bull
+
+var array<UDT_HTFCandle> htf_1_list = array.new<UDT_HTFCandle>()
+var array<UDT_HTFCandle> htf_2_list = array.new<UDT_HTFCandle>()
+var array<UDT_HTFCandle> htf_3_list = array.new<UDT_HTFCandle>()
+
+//#endregion
+
+// # ========================================================================= #
+// # |   Modul 1: Asia Range Logic                                           |
+// # ========================================================================= #
+
+//#region Asia Range Execution
+
+var int   asia_start_bar = na
+var float current_asia_hi = na
+var float current_asia_lo = na
+
+// Helper session functions
+is_in_asia = not na(time(timeframe.period, asia_session, asia_tz))
+asia_started = is_in_asia and not is_in_asia[1]
+asia_ended   = not is_in_asia and is_in_asia[1]
+
+if show_asia
+    if asia_started
+        asia_start_bar := bar_index
+        current_asia_hi := high
+        current_asia_lo := low
+        
+        // Buat objek sesi baru
+        new_sess = UDT_AsiaSession.new(start_bar = bar_index, end_bar = bar_index, hi = high, lo = low, mid = (high + low) / 2)
+        new_sess.sess_box := box.new(left = bar_index, top = high, right = bar_index + 1, bottom = low, border_color = asia_border_col, bgcolor = asia_box_col, border_width = 1)
+        asia_sessions.push(new_sess)
+        
+        // Jaga kapasitas array history
+        if asia_sessions.size() > asia_history_count
+            oldest = asia_sessions.shift()
+            if not na(oldest.sess_box)
+                oldest.sess_box.delete()
+            if not na(oldest.hi_line)
+                oldest.hi_line.delete()
+            if not na(oldest.lo_line)
+                oldest.lo_line.delete()
+            if not na(oldest.mid_line)
+                oldest.mid_line.delete()
+
+    else if is_in_asia and asia_sessions.size() > 0
+        current_asia_hi := math.max(current_asia_hi, high)
+        current_asia_lo := math.min(current_asia_lo, low)
+        
+        latest = asia_sessions.last()
+        latest.end_bar := bar_index
+        latest.hi := current_asia_hi
+        latest.lo := current_asia_lo
+        latest.mid := (current_asia_hi + current_asia_lo) / 2
+        
+        if not na(latest.sess_box)
+            box.set_top(latest.sess_box, current_asia_hi)
+            box.set_bottom(latest.sess_box, current_asia_lo)
+            box.set_right(latest.sess_box, bar_index)
+
+    else if asia_ended and asia_sessions.size() > 0
+        latest = asia_sessions.last()
+        latest.end_bar := bar_index
+        
+        ext_target = bar_index + asia_extend_bars
+        if asia_show_hl
+            latest.hi_line := line.new(x1 = latest.start_bar, y1 = latest.hi, x2 = ext_target, y2 = latest.hi, color = asia_hi_col, width = 1, style = line.style_solid)
+            latest.lo_line := line.new(x1 = latest.start_bar, y1 = latest.lo, x2 = ext_target, y2 = latest.lo, color = asia_lo_col, width = 1, style = line.style_solid)
+            
+            // Label High / Low
+            label.new(x = ext_target, y = latest.hi, text = "Asia High (" + str.tostring(latest.hi, format.mintick) + ")", style = label.style_label_left, textcolor = asia_hi_col, color = #ffffff00, size = size.tiny)
+            label.new(x = ext_target, y = latest.lo, text = "Asia Low (" + str.tostring(latest.lo, format.mintick) + ")", style = label.style_label_left, textcolor = asia_lo_col, color = #ffffff00, size = size.tiny)
+        
+        if asia_show_eq
+            latest.mid_line := line.new(x1 = latest.start_bar, y1 = latest.mid, x2 = ext_target, y2 = latest.mid, color = asia_eq_col, width = 1, style = line.style_dotted)
+            label.new(x = ext_target, y = latest.mid, text = "Asia EQ 50%", style = label.style_label_left, textcolor = color.gray, color = #ffffff00, size = size.tiny)
+
+    // Deteksi Liquidity Sweeps setelah sesi Asia selesai
+    if not is_in_asia and asia_detect_sweep and asia_sessions.size() > 0
+        latest = asia_sessions.last()
+        if not latest.hi_swept and high > latest.hi
+            latest.hi_swept := true
+            label.new(x = bar_index, y = high, text = "⚡ Asia High Swept", style = label.style_label_down, color = color.new(asia_hi_col, 20), textcolor = color.black, size = size.small)
+            alert("Asia High Liquidity Swept pada " + syminfo.ticker, alert.freq_once_per_bar)
+
+        if not latest.lo_swept and low < latest.lo
+            latest.lo_swept := true
+            label.new(x = bar_index, y = low, text = "⚡ Asia Low Swept", style = label.style_label_up, color = color.new(asia_lo_col, 20), textcolor = color.white, size = size.small)
+            alert("Asia Low Liquidity Swept pada " + syminfo.ticker, alert.freq_once_per_bar)
+
+//#endregion
+
+// # ========================================================================= #
+// # |   Modul 2: HTF Candles Reconstruction & Plotting                      |
+// # ========================================================================= #
+
+//#region HTF Candles Engine
+
+method detect_candle(array<UDT_HTFCandle> list, string tf) =>
+    bool is_new_session = ta.change(time(tf)) != 0 or list.size() == 0
+    if is_new_session
+        c = UDT_HTFCandle.new(tf = tf)
+        c.o := open
+        c.h := high
+        c.l := low
+        c.c := close
+        c.ot := time
+        c.ct := time
+        c.o_idx := bar_index
+        c.c_idx := bar_index
+        c.h_idx := bar_index
+        c.l_idx := bar_index
+        c.bull  := close >= open
+        if list.size() > 0
+            list.first().is_closed := true
+        list.unshift(c)
+    else if list.size() > 0
+        c = list.first()
+        c.c := close
+        c.c_idx := bar_index
+        c.ct := time
+        if high > c.h
+            c.h := high
+            c.h_idx := bar_index
+        if low < c.l
+            c.l := low
+            c.l_idx := bar_index
+        c.bull := c.c >= c.o
+
+method trim_list(array<UDT_HTFCandle> list, int max_count) =>
+    while list.size() > max_count
+        list.pop()
+
+tf_format(string tf) =>
+    switch tf
+        "1"   => "1m"
+        "3"   => "3m"
+        "5"   => "5m"
+        "15"  => "15m"
+        "30"  => "30m"
+        "45"  => "45m"
+        "60"  => "1H"
+        "120" => "2H"
+        "180" => "3H"
+        "240" => "4H"
+        "D"   => "1D"
+        "1D"  => "1D"
+        "W"   => "1W"
+        "1W"  => "1W"
+        "M"   => "1M"
+        "1M"  => "1M"
+        => tf
+
+format_countdown(int remaining_ms) =>
+    if remaining_ms <= 0
+        "00:00"
+    else
+        total_seconds = math.floor(remaining_ms / 1000)
+        days = math.floor(total_seconds / 86400)
+        hours = math.floor((total_seconds % 86400) / 3600)
+        minutes = math.floor((total_seconds % 3600) / 60)
+        seconds = total_seconds % 60
+        if days > 0
+            str.format("{0}d {1}h", days, hours)
+        else if hours > 0
+            str.format("{0,number,00}:{1,number,00}:{2,number,00}", hours, minutes, seconds)
+        else
+            str.format("{0,number,00}:{1,number,00}", minutes, seconds)
+
+method draw_htf_candles(array<UDT_HTFCandle> list, int base_offset, string tf, bool trace_ltf) =>
+    count = list.size()
+    if count > 0
+        float y_high = na
+        float y_low  = na
+        for i = 0 to count - 1
+            candle = list.get(i)
+            // Hitung koordinat offset visual di sisi kanan chart
+            shift = base_offset + (htf_candle_width + htf_candle_space) * (count - i - 1)
+            candle.candle_left  := last_bar_index + shift
+            candle.candle_right := candle.candle_left + htf_candle_width
+            candle.candle_top   := math.max(candle.o, candle.c)
+            candle.candle_bottom:= math.min(candle.o, candle.c)
+            candle.wick_x       := candle.candle_left + math.round(htf_candle_width / 2)
+            
+            y_high := na(y_high) ? candle.h : math.max(y_high, candle.h)
+            y_low  := na(y_low)  ? candle.l : math.min(y_low, candle.l)
+            
+            c_color = candle.bull ? htf_bull_color : htf_bear_color
+            
+            // Gambar body candle
+            bin.boxes.push(box.new(left = candle.candle_left, top = candle.candle_top, right = candle.candle_right, bottom = candle.candle_bottom, border_color = htf_wick_color, bgcolor = c_color))
+            // Gambar wick atas dan bawah
+            bin.lines.push(line.new(x1 = candle.wick_x, y1 = candle.h, x2 = candle.wick_x, y2 = candle.candle_top, color = htf_wick_color, width = 1))
+            bin.lines.push(line.new(x1 = candle.wick_x, y1 = candle.candle_bottom, x2 = candle.wick_x, y2 = candle.l, color = htf_wick_color, width = 1))
+            
+            // Garis trace High/Low ke chart saat ini (opsional)
+            if trace_ltf and htf_trace_hl_show and i == 0
+                bin.lines.push(line.new(x1 = candle.ot, y1 = candle.h, x2 = time, y2 = candle.h, xloc = xloc.bar_time, color = htf_trace_hl_color, style = line.style_dotted))
+                bin.lines.push(line.new(x1 = candle.ot, y1 = candle.l, x2 = time, y2 = candle.l, xloc = xloc.bar_time, color = htf_trace_hl_color, style = line.style_dotted))
+
+        // Center label offset
+        mid_shift = base_offset + (htf_candle_width + htf_candle_space) * math.round(count / 2)
+        
+        // Buat string judul & hitung mundur candle close
+        title_txt = tf_format(tf)
+        if htf_countdown_show
+            tc = time_close(tf)
+            if not na(tc)
+                rem_ms = math.max(0, tc - timenow)
+                title_txt := title_txt + "\n" + format_countdown(rem_ms)
+
+        // Render label berdasarkan pilihan posisi: Top, Bottom, atau Both
+        if htf_title_position == "Top" or htf_title_position == "Both"
+            bin.labels.push(label.new(x = last_bar_index + mid_shift, y = y_high, text = title_txt, style = label.style_label_down, textcolor = htf_title_color, color = #ffffff00, size = size.tiny))
+            
+        if htf_title_position == "Bottom" or htf_title_position == "Both"
+            bin.labels.push(label.new(x = last_bar_index + mid_shift, y = y_low, text = title_txt, style = label.style_label_up, textcolor = htf_title_color, color = #ffffff00, size = size.tiny))
+
+//#endregion
+
+// # ========================================================================= #
+// # |   Execution & Rendering Loop                                          |
+// # ========================================================================= #
+
+//#region Main Execution
+
+var bool tf1_valid = htf_1_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_1_tf)
+var bool tf2_valid = htf_2_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_2_tf)
+var bool tf3_valid = htf_3_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_3_tf)
+
+if show_htf
+    if tf1_valid
+        htf_1_list.detect_candle(htf_1_tf)
+        htf_1_list.trim_list(htf_1_number)
+
+    if tf2_valid
+        htf_2_list.detect_candle(htf_2_tf)
+        htf_2_list.trim_list(htf_2_number)
+
+    if tf3_valid
+        htf_3_list.detect_candle(htf_3_tf)
+        htf_3_list.trim_list(htf_3_number)
+
+    if barstate.islast
+        bin.clean_bin()
+        cur_offset = htf_candle_offset
+        
+        if tf1_valid
+            htf_1_list.draw_htf_candles(cur_offset, htf_1_tf, htf_1_map)
+            cur_offset += (htf_candle_width + htf_candle_space) * htf_1_number + 6
+            
+        if tf2_valid
+            htf_2_list.draw_htf_candles(cur_offset, htf_2_tf, htf_2_map)
+            cur_offset += (htf_candle_width + htf_candle_space) * htf_2_number + 6
+            
+        if tf3_valid
+            htf_3_list.draw_htf_candles(cur_offset, htf_3_tf, htf_3_map)
+else
+    bin.clean_bin()
+
+//#endregion
+
+// # ========================================================================= #
+// # |   Modul 3: Watermark & Branding                                       |
+// # ========================================================================= #
+
+//#region Branding
+
+// Watermark Branding
+if barstate.isfirst and not hide_brand
+    var table brand_tbl = table.new(position.bottom_right, 1, 1, bgcolor = chart.bg_color)
+    table.cell(brand_tbl, 0, 0, "©️ Mayya", text_color = color.gray, text_size = size.tiny, text_halign = text.align_center)
+
+//#endregion

@@ -91,13 +91,9 @@ color_transparent                   = #ffffff00
     htf_sweeps_candle_width                     = input.string("Small", "Size               ", inline = "4.0", group = "HTF", options = ["Tiny", "Small", "Medium", "Large", "Huge"], tooltip = "Candle size")
     htf_sweeps_label_show                       = input.bool(true, "Labels   ", inline = "5.0", group = "HTF")
     htf_sweeps_label_size                       = input.string("Normal", "", inline = "5.0", group = "HTF", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"])
-    htf_sweeps_label_position                   = input.string("Top", "", inline = "5.0", group = "HTF", options = ["Both", "Top", "Bottom"], tooltip = "[Input 1] - Size of the label\n[Input 2] - Position of the label\n[Input 3] - Text color of the label")
-    htf_sweeps_label_color                      = input.color(colors_black, "", inline = "5.0", group = "HTF")
-    // htf_sweeps_bias_show                        = input.bool(true, "Bias      ", inline = "6.0", group = "HTF")
-    // htf_sweeps_bias_bull_color                  = input.color(colors_green, "", inline = "6.0", group = "HTF")
-    // htf_sweeps_bias_bear_color                  = input.color(colors_red, "", inline = "6.0", group = "HTF")
-    // htf_sweeps_time_show                        = input.bool(true, "Time     ", inline = "7.0", group = "HTF")
-    // htf_sweeps_time_color                       = input.color(colors_gray, "", inline = "7.0", group = "HTF")
+    htf_sweeps_label_position                   = input.string("Top", "Posisi Label", inline = "5.1", group = "HTF", options = ["Both", "Top", "Bottom"], tooltip = "Posisi label/title: Atas (Top), Bawah (Bottom), atau Keduanya (Both)")
+    htf_sweeps_label_color                      = input.color(colors_black, "Warna Label", inline = "5.1", group = "HTF")
+    htf_sweeps_countdown_show                   = input.bool(true, "Waktu Mundur Close Candle", group = "HTF", tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
     
     htf_sweeps_ltf_trace_h_l_show               = input.bool(true, "H/L Line ", inline = "1.0", group="LTF")
     htf_sweeps_ltf_trace_h_l_style              = input.string('····', '', options = ['⎯⎯⎯', '----', '····'], inline = "1.0", group="LTF")
@@ -642,6 +638,22 @@ method draw_htf_candle(UDT_HTF_Candle candle) =>
     bin.bin_ln.push(line.new(x1=candle.wick_x, y1=candle.candle_bottom, x2=candle.wick_x, y2=candle.l, color = htf_sweeps_wick_border_color))
     candle
 
+format_countdown(int remaining_ms) =>
+    if remaining_ms <= 0
+        "00:00"
+    else
+        total_seconds = math.floor(remaining_ms / 1000)
+        days = math.floor(total_seconds / 86400)
+        hours = math.floor((total_seconds % 86400) / 3600)
+        minutes = math.floor((total_seconds % 3600) / 60)
+        seconds = total_seconds % 60
+        if days > 0
+            str.format("{0}d {1}h", days, hours)
+        else if hours > 0
+            str.format("{0,number,00}:{1,number,00}:{2,number,00}", hours, minutes, seconds)
+        else
+            str.format("{0,number,00}:{1,number,00}", minutes, seconds)
+
 method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
     float y_top = na
     float y_bottom = na
@@ -661,10 +673,16 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
     x = math.round(math.avg(x_min, x_max))
     txt = tf_label(tf)
 
+    if htf_sweeps_countdown_show
+        tc = time_close(tf)
+        if not na(tc)
+            rem = math.max(0, tc - timenow)
+            txt := txt + "\n" + format_countdown(rem)
+
     if not na(y_top)
-        bin.bin_lbl.push(label.new(x = x, y = y_top, text = txt, tooltip = str.format("HTF {0}", txt), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_down, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
+        bin.bin_lbl.push(label.new(x = x, y = y_top, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_down, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
     if not na(y_bottom)
-        bin.bin_lbl.push(label.new(x = x, y = y_bottom, text = txt, tooltip = str.format("HTF {0}", txt), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_up, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
+        bin.bin_lbl.push(label.new(x = x, y = y_bottom, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_up, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
     // if htf_sweeps_bias_show and htf_candles.size() > 1
     //     c1 = htf_candles.get(0)
     //     c2 = htf_candles.get(1)
@@ -824,10 +842,7 @@ if showSessions
     // Groups
     ///////////////
     g0                      = '// GENERAL //'
-    g1_01                   = '// ♯1 SESSION //'
-    g1_02                   = '// ♯2 SESSION //'
-    g1_03                   = '// ♯3 SESSION //'
-    g1_04                   = '// ♯4 SESSION //'
+    g1_01                   = '// ASIA RANGE //'
     g4                      = '// BOX //'
     g6                      = '// LABELS //'
     g5                      = '// OPENING RANGE //'
@@ -835,7 +850,6 @@ if showSessions
     g8                      = '// OPTIONS //'
     g11                     = '// CANDLE //'
     g10                     = '// ALERTS VISUALISED //'
-    g12                     = '// INFORMATION //'
     
 
     //defined
@@ -1037,57 +1051,18 @@ if showSessions
     i_lookback              = 12 * 60
     
     // Sessions
-    i_show_sess1            = input.bool(true, 'Session 1 ', group=g1_01, inline='session1_1') and i_show
-    i_sess1_label           = input.string('London', '', group=g1_01, inline='session1_1')
-    i_sess1_color           = input.color(#66D9EF, '', group=g1_01, inline='session1_1')
-    i_sess1_barcolor1       = input.color(#66D9EF, '•', group=g1_01, inline='session1_1')
-    i_sess1_barcolor2       = input.color(#66D9EF, '', group=g1_01, inline='session1_1')
-    i_sess1                 = input.session('0800-1700', 'Time', group=g1_01)
+    i_show_sess1            = input.bool(true, 'Asia Range ', group=g1_01, inline='session1_1') and i_show
+    i_sess1_label           = input.string('Asia Range', '', group=g1_01, inline='session1_1')
+    i_sess1_color           = input.color(#AE81FF, '', group=g1_01, inline='session1_1')
+    i_sess1_barcolor1       = input.color(#AE81FF, '•', group=g1_01, inline='session1_1')
+    i_sess1_barcolor2       = input.color(#AE81FF, '', group=g1_01, inline='session1_1')
+    i_sess1                 = input.session('0000-0800', 'Jam Sesi Asia', group=g1_01)
     i_sess1_extend          = input.string(option_no, 'Extend', options=[option_yes, option_no], group=g1_01)
     i_sess1_op              = input.string(option_no, 'Opening range', group=g1_01, options=[option_yes, option_no]) != option_no and i_show
     i_sess1_fib             = input.string(option_no, 'Fibonacci levels', group=g1_01, options=[option_yes, option_no]) != option_no
     i_sess1_chart           = input.string(option_no, 'Bar', options=[option_chart_1, option_chart_2, option_no], group=g1_01)
     i_sess1_barcolor        = i_sess1_chart == option_chart_1
     i_sess1_plotcandle      = i_sess1_chart == option_chart_2
-    
-    i_show_sess2            = input.bool(true, 'Session 2 ', group=g1_02, inline='session2_1') and i_show
-    i_sess2_label           = input.string('New York', '', group=g1_02, inline='session2_1')
-    i_sess2_color           = input.color(#FD971F, '', group=g1_02, inline='session2_1')
-    i_sess2_barcolor1       = input.color(#FD971F, '•', group=g1_02, inline='session2_1')
-    i_sess2_barcolor2       = input.color(#FD971F, '', group=g1_02, inline='session2_1')
-    i_sess2                 = input.session('1300-2200', 'Time', group=g1_02)
-    i_sess2_extend          = input.string(option_no, 'Extend', options=[option_yes, option_no], group=g1_02)
-    i_sess2_op              = input.string(option_no, 'Opening range', group=g1_02, options=[option_yes, option_no]) != option_no and i_show
-    i_sess2_fib             = input.string(option_no, 'Fibonacci levels', group=g1_02, options=[option_yes, option_no]) != option_no
-    i_sess2_chart           = input.string(option_no, 'Bar', options=[option_chart_1, option_chart_2, option_no], group=g1_02)
-    i_sess2_barcolor        = i_sess2_chart == option_chart_1
-    i_sess2_plotcandle      = i_sess2_chart == option_chart_2
-    
-    i_show_sess3            = input.bool(true, 'Session 3 ', group=g1_03, inline='session3_1') and i_show
-    i_sess3_label           = input.string('Tokyo', '', group=g1_03, inline='session3_1')
-    i_sess3_color           = input.color(#AE81FF, '', group=g1_03, inline='session3_1')
-    i_sess3_barcolor1       = input.color(#AE81FF, '•', group=g1_03, inline='session3_1')
-    i_sess3_barcolor2       = input.color(#AE81FF, '', group=g1_03, inline='session3_1')
-    i_sess3                 = input.session('0000-0900', 'Time', group=g1_03)
-    i_sess3_extend          = input.string(option_no, 'Extend', options=[option_yes, option_no], group=g1_03)
-    i_sess3_op              = input.string(option_no, 'Opening range', group=g1_03, options=[option_yes, option_no]) != option_no and i_show
-    i_sess3_fib             = input.string(option_no, 'Fibonacci levels', group=g1_03, options=[option_yes, option_no]) != option_no
-    i_sess3_chart           = input.string(option_no, 'Bar', options=[option_chart_1, option_chart_2, option_no], group=g1_03)
-    i_sess3_barcolor        = i_sess3_chart == option_chart_1
-    i_sess3_plotcandle      = i_sess3_chart == option_chart_2
-    
-    i_show_sess4            = input.bool(false, 'Session 4 ', group=g1_04, inline='session4_1') and i_show
-    i_sess4_label           = input.string('Sydney', '', group=g1_04, inline='session4_1')
-    i_sess4_color           = input.color(#FB71A3, '', group=g1_04, inline='session4_1')
-    i_sess4_barcolor1       = input.color(#FB71A3, '•', group=g1_04, inline='session4_1')
-    i_sess4_barcolor2       = input.color(#FB71A3, '', group=g1_04, inline='session4_1')
-    i_sess4                 = input.session('2000-0500', 'Time', group=g1_04)
-    i_sess4_extend          = input.string(option_no, 'Extend', options=[option_yes, option_no], group=g1_04)
-    i_sess4_op              = input.string(option_no, 'Opening range', group=g1_04, options=[option_yes, option_no]) != option_no and i_show
-    i_sess4_fib             = input.string(option_no, 'Fibonacci levels', group=g1_04, options=[option_yes, option_no]) != option_no
-    i_sess4_chart           = input.string(option_no, 'Bar', options=[option_chart_1, option_chart_2, option_no], group=g1_04)
-    i_sess4_barcolor        = i_sess4_chart == option_chart_1
-    i_sess4_plotcandle      = i_sess4_chart == option_chart_2
     
     // Show & Styles
     i_sess_box_style        = input.string('Box', '', options=['Box', 'Background', 'Hamburger', 'Sandwich'], group=g4, inline='box_style')
@@ -1125,7 +1100,6 @@ if showSessions
     i_o_breakout_icon       = input.bool(false, 'Breakout flag', group=g5, inline='op_options')
     i_o_target              = input.bool(false, 'Target lines', group=g5, inline='op_options')
     i_o_target_boxes        = input.bool(false, 'Target boxes', group=g5, inline='op_options')
-    i_show_op_table         = input.bool(false, 'Data table', group=g5)
     
     // Candle
     option_candle_body      = 'OC'
@@ -1146,15 +1120,6 @@ if showSessions
     i_f_linestyle           = f_border_style(input.string(option_border_style1, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g7, inline='fib_display'))
     i_f_linewidth           = input.int(1, '', minval=1, group=g7, inline='fib_display')
     i_sess1_fib            := i_f_show ? i_sess1_fib : false
-    i_sess2_fib            := i_f_show ? i_sess2_fib : false
-    i_sess3_fib            := i_f_show ? i_sess3_fib : false
-    i_sess4_fib            := i_f_show ? i_sess4_fib : false
-    
-    // Information table
-    i_show_info             = input.bool(true, '', group=g12, inline='info_display')
-    i_info_size             = input.string(size.small, '', options=[size.auto, size.tiny, size.small, size.normal, size.large, size.huge], group=g12, inline='info_display')
-    i_info_value_type       = input.string('Pips', '', options=['Price', 'Pips'], group=g12, inline='info_display')
-    i_info_period           = input.int(50, '', group=g12, inline='info_display')
     
     // Alerts
     i_alert1_show           = input.bool(false, 'Alerts - Sessions stard/end', group=g10)
@@ -1723,14 +1688,8 @@ if showSessions
     // Plotting
     ///////////////////
     var sess1_data = Session.new(i_sess1, tz, i_sess1_label, i_sess1_color).create(i_sess1_extend, i_sess1_fib, i_sess1_op)
-    var sess2_data = Session.new(i_sess2, tz, i_sess2_label, i_sess2_color).create(i_sess2_extend, i_sess2_fib, i_sess2_op)
-    var sess3_data = Session.new(i_sess3, tz, i_sess3_label, i_sess3_color).create(i_sess3_extend, i_sess3_fib, i_sess3_op)
-    var sess4_data = Session.new(i_sess4, tz, i_sess4_label, i_sess4_color).create(i_sess4_extend, i_sess4_fib, i_sess4_op)
     
     [is_sess1, sess1_ohlc] = draw(i_show_sess1, sess1_data, i_sess1_extend, i_sess1_fib, i_sess1_op)
-    [is_sess2, sess2_ohlc] = draw(i_show_sess2, sess2_data, i_sess2_extend, i_sess2_fib, i_sess2_op)
-    [is_sess3, sess3_ohlc] = draw(i_show_sess3, sess3_data, i_sess3_extend, i_sess3_fib, i_sess3_op)
-    [is_sess4, sess4_ohlc] = draw(i_show_sess4, sess4_data, i_sess4_extend, i_sess4_fib, i_sess4_op)
     
     is_positive_bar         = close > open
     
@@ -1738,25 +1697,10 @@ if showSessions
     color c_plotcandle      = na
     
     c_sess1_barcolor        = (is_sess1) ? (is_positive_bar ? i_sess1_barcolor1 : i_sess1_barcolor2) : na
-    c_sess2_barcolor        = (is_sess2) ? (is_positive_bar ? i_sess2_barcolor1 : i_sess2_barcolor2) : na
-    c_sess3_barcolor        = (is_sess3) ? (is_positive_bar ? i_sess3_barcolor1 : i_sess3_barcolor2) : na
-    c_sess4_barcolor        = (is_sess4) ? (is_positive_bar ? i_sess4_barcolor1 : i_sess4_barcolor2) : na
     
     if (i_sess1_chart != option_no) and is_sess1
         c_barcolor         := i_sess1_barcolor   ? c_sess1_barcolor : na
         c_plotcandle       := i_sess1_plotcandle ? c_sess1_barcolor : na
-    
-    if (i_sess2_chart != option_no) and is_sess2
-        c_barcolor         := i_sess2_barcolor   ? c_sess2_barcolor : na
-        c_plotcandle       := i_sess2_plotcandle ? c_sess2_barcolor : na
-    
-    if (i_sess3_chart != option_no) and is_sess3
-        c_barcolor         := i_sess3_barcolor   ? c_sess3_barcolor : na
-        c_plotcandle       := i_sess3_plotcandle ? c_sess3_barcolor : na
-    
-    if (i_sess4_chart != option_no) and is_sess4
-        c_barcolor         := i_sess4_barcolor   ? c_sess4_barcolor : na
-        c_plotcandle       := i_sess4_plotcandle ? c_sess4_barcolor : na
     
     barcolor(c_barcolor)
     plotcandle(open, high, low, close, color=is_positive_bar ? TRANSPARENT : c_plotcandle, bordercolor=c_plotcandle, wickcolor=c_plotcandle)
@@ -1766,27 +1710,12 @@ if showSessions
 ////////////////////
 // Session alerts
     sess1_started = is_sess1 and not is_sess1[1], sess1_ended = not is_sess1 and is_sess1[1]
-    sess2_started = is_sess2 and not is_sess2[1], sess2_ended = not is_sess2 and is_sess2[1]
-    sess3_started = is_sess3 and not is_sess3[1], sess3_ended = not is_sess3 and is_sess3[1]
-    sess4_started = is_sess4 and not is_sess4[1], sess4_ended = not is_sess4 and is_sess4[1]
     
-    alertcondition(sess1_started,   'Session #1 started')
-    alertcondition(sess1_ended,     'Session #1 ended'  )
-    alertcondition(sess2_started,   'Session #2 started')
-    alertcondition(sess2_ended,     'Session #2 ended'  )
-    alertcondition(sess3_started,   'Session #3 started')
-    alertcondition(sess3_ended,     'Session #3 ended'  )
-    alertcondition(sess4_started,   'Session #4 started')
-    alertcondition(sess4_ended,     'Session #4 ended'  )
+    alertcondition(sess1_started,   'Asia Range started')
+    alertcondition(sess1_ended,     'Asia Range ended'  )
     
-    alertcondition((not is_sess1) and ta.crossover (close, sess1_ohlc.high), 'Session #1 High crossed (after session closed)')
-    alertcondition((not is_sess1) and ta.crossunder(close, sess1_ohlc.low) , 'Session #1 Low crossed (after session closed)' )
-    alertcondition((not is_sess2) and ta.crossover (close, sess2_ohlc.high), 'Session #2 High crossed (after session closed)')
-    alertcondition((not is_sess2) and ta.crossunder(close, sess2_ohlc.low) , 'Session #2 Low crossed (after session closed)' )
-    alertcondition((not is_sess3) and ta.crossover (close, sess3_ohlc.high), 'Session #3 High crossed (after session closed)')
-    alertcondition((not is_sess3) and ta.crossunder(close, sess3_ohlc.low) , 'Session #3 Low crossed (after session closed)' )
-    alertcondition((not is_sess4) and ta.crossover (close, sess4_ohlc.high), 'Session #4 High crossed (after session closed)')
-    alertcondition((not is_sess4) and ta.crossunder(close, sess4_ohlc.low) , 'Session #4 Low crossed (after session closed)' )
+    alertcondition((not is_sess1) and ta.crossover (close, sess1_ohlc.high), 'Asia Range High crossed (after session closed)')
+    alertcondition((not is_sess1) and ta.crossunder(close, sess1_ohlc.low) , 'Asia Range Low crossed (after session closed)' )
     
     // Alerts visualized
     if i_alert1_show
@@ -1796,157 +1725,10 @@ if showSessions
             if sess1_ended
                 label.new(bar_index - session_end_offset, close, 'End'  , yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down)
     
-        if i_show_sess2
-            if sess2_started
-                label.new(bar_index, close, 'Start', yloc=yloc.abovebar, color=i_sess2_color, textcolor=color_text, size=size.small, style=label.style_label_down)
-            if sess2_ended
-                label.new(bar_index - session_end_offset, close, 'End'  , yloc=yloc.abovebar, color=i_sess2_color, textcolor=color_text, size=size.small, style=label.style_label_down)
-    
-        if i_show_sess3
-            if sess3_started
-                label.new(bar_index, close, 'Start', yloc=yloc.abovebar, color=i_sess3_color, textcolor=color_text, size=size.small, style=label.style_label_down)
-            if sess3_ended
-                label.new(bar_index - session_end_offset, close, 'End'  , yloc=yloc.abovebar, color=i_sess3_color, textcolor=color_text, size=size.small, style=label.style_label_down)
-    
-        if i_show_sess4
-            if sess4_started
-                label.new(bar_index, close, 'Start', yloc=yloc.abovebar, color=i_sess4_color, textcolor=color_text, size=size.small, style=label.style_label_down)
-            if sess4_ended
-                label.new(bar_index - session_end_offset, close, 'End'  , yloc=yloc.abovebar, color=i_sess4_color, textcolor=color_text, size=size.small, style=label.style_label_down)
-    
     plot(i_alert3_show ? sess1_ohlc.high : na, 'sess1_high', style=plot.style_linebr, color=i_sess1_color)
     plot(i_alert3_show ? sess1_ohlc.low  : na, 'sess1_low' , style=plot.style_linebr, color=i_sess1_color, linewidth=2)
-    plot(i_alert3_show ? sess2_ohlc.high : na, 'sess2_high', style=plot.style_linebr, color=i_sess2_color)
-    plot(i_alert3_show ? sess2_ohlc.low  : na, 'sess2_low' , style=plot.style_linebr, color=i_sess2_color, linewidth=2)
-    plot(i_alert3_show ? sess3_ohlc.high : na, 'sess3_high', style=plot.style_linebr, color=i_sess3_color)
-    plot(i_alert3_show ? sess3_ohlc.low  : na, 'sess3_low' , style=plot.style_linebr, color=i_sess3_color, linewidth=2)
-    plot(i_alert3_show ? sess4_ohlc.high : na, 'sess4_high', style=plot.style_linebr, color=i_sess4_color)
-    plot(i_alert3_show ? sess4_ohlc.low  : na, 'sess4_low' , style=plot.style_linebr, color=i_sess4_color, linewidth=2)
     
     plotshape(i_alert3_show and (not is_sess1) and ta.crossover (close, sess1_ohlc.high) ? sess1_ohlc.high : na, 'cross sess1_high', color=i_sess1_color, style=shape.triangleup  , location=location.absolute, size=size.tiny)
     plotshape(i_alert3_show and (not is_sess1) and ta.crossunder(close, sess1_ohlc.low)  ? sess1_ohlc.low  : na, 'cross sess1_low' , color=i_sess1_color, style=shape.triangledown, location=location.absolute, size=size.tiny)
-    plotshape(i_alert3_show and (not is_sess2) and ta.crossover (close, sess2_ohlc.high) ? sess2_ohlc.high : na, 'cross sess2_high', color=i_sess2_color, style=shape.triangleup  , location=location.absolute, size=size.tiny)
-    plotshape(i_alert3_show and (not is_sess2) and ta.crossunder(close, sess2_ohlc.low)  ? sess2_ohlc.low  : na, 'cross sess2_low' , color=i_sess2_color, style=shape.triangledown, location=location.absolute, size=size.tiny)
-    plotshape(i_alert3_show and (not is_sess3) and ta.crossover (close, sess3_ohlc.high) ? sess3_ohlc.high : na, 'cross sess3_high', color=i_sess3_color, style=shape.triangleup  , location=location.absolute, size=size.tiny)
-    plotshape(i_alert3_show and (not is_sess3) and ta.crossunder(close, sess3_ohlc.low)  ? sess3_ohlc.low  : na, 'cross sess3_low' , color=i_sess3_color, style=shape.triangledown, location=location.absolute, size=size.tiny)
-    plotshape(i_alert3_show and (not is_sess4) and ta.crossover (close, sess4_ohlc.high) ? sess4_ohlc.high : na, 'cross sess4_high', color=i_sess4_color, style=shape.triangleup  , location=location.absolute, size=size.tiny)
-    plotshape(i_alert3_show and (not is_sess4) and ta.crossunder(close, sess4_ohlc.low)  ? sess4_ohlc.low  : na, 'cross sess4_low' , color=i_sess4_color, style=shape.triangledown, location=location.absolute, size=size.tiny)
-    
-//////////////
-// Analysis //
-    var text_color      = #e1e2e4
-    var bgcolor         = #1a1c20
-    var color_green     = ac.monokai('green')
-    var color_orange    = ac.monokai('orange')
-    var color_red       = ac.monokai('red')
-    var color_ind_green = ac.tradingview('green')
-    var color_ind_gray  = color.new(ac.tradingview('gray'), 30)
-    var color_white     = #e1e2e4
-    
-    i_show_analysis2    = false//input.bool(false, 'Analysis')
-    
-    if i_show_info and barstate.islast
-        data = array.new<Session>()
-    
-        if array.size(sess1_data.price_ranges) > 0
-            data.push(sess1_data)
-        if array.size(sess2_data.price_ranges) > 0
-            data.push(sess2_data)
-        if array.size(sess3_data.price_ranges) > 0
-            data.push(sess3_data)
-        if array.size(sess4_data.price_ranges) > 0
-            data.push(sess4_data)
-    
-        var tbl_avg = table.new(position.top_right, 5, 5, frame_width=2, bgcolor=bgcolor, frame_color=#25272c, border_width=1, border_color=#25272c)
-    
-        table.cell(tbl_avg, 0, 0, 'Session', text_color=color.new(text_color, 60), text_size=i_info_size, text_halign=text.align_center)
-        table.cell(tbl_avg, 1, 0, '',        text_color=color.new(text_color, 60), text_size=i_info_size)
-        table.cell(tbl_avg, 2, 0, 'Cur',     text_color=color.new(text_color, 60), text_size=i_info_size)
-        table.cell(tbl_avg, 3, 0, 'Avg('+str.tostring(i_info_period)+')', text_color=color.new(text_color, 60), text_size=i_info_size)
-        table.cell(tbl_avg, 4, 0, '%',       text_color=color.new(text_color, 60), text_size=i_info_size)
-        table.merge_cells(tbl_avg, 0, 0, 1, 0)
-    
-        if array.size(data) > 0
-            for i = 0 to array.size(data) - 1
-                my_data = array.get(data, i)
-                in_session = my_data.in_session and session.ismarket
-                p = my_data.ohlc.hl / my_data.price_range_avg
-                col_cur = p < 0.75 ? color_green : p < 1.25 ? color_orange : color_red
-                v1 = i_info_value_type == 'Price' ? str.tostring(my_data.ohlc.hl, format.mintick) : str.tostring(util.toPips(my_data.ohlc.hl), '#.#')
-                v2 = i_info_value_type == 'Price' ? str.tostring(my_data.price_range_avg, format.mintick) : str.tostring(util.toPips(my_data.price_range_avg), '#.#')
-                v3 = in_session ? '◉' : '●'
-    
-                color_name  = in_session ? color_white : color.new(ac.monokai('gray'), 30)
-                color_ind   = in_session ? color_ind_green : color_ind_gray
-                color_cur   = in_session ? col_cur : color.new(col_cur, 60)
-    
-                table.cell(tbl_avg, 0, i + 1, my_data.name, text_color=color_name, text_size=i_info_size, text_halign=text.align_left)
-                table.cell(tbl_avg, 1, i + 1, v3, text_color=color_ind , text_size=size.tiny,   text_halign=text.align_center, text_valign=text.align_center)
-                table.cell(tbl_avg, 2, i + 1, v1, text_color=color_cur , text_size=i_info_size, text_halign=text.align_right, text_font_family=font.family_monospace)
-                table.cell(tbl_avg, 3, i + 1, v2, text_color=color_name, text_size=i_info_size, text_halign=text.align_right, text_font_family=font.family_monospace)
-                table.cell(tbl_avg, 4, i + 1, str.format('{0,number,percent}', p), text_color=color_cur, text_size=i_info_size, text_halign=text.align_right, text_font_family=font.family_monospace)
-    
-    
-    row_index = 2
-    var tbl_op = table.new(position.bottom_right, 7, 5, frame_width=2, bgcolor=bgcolor, frame_color=#25272c, border_width=1, border_color=#25272c)
-    
-    if i_show_op_table and (barstate.islast or barstate.isconfirmed)
-        data = array.new<Session>()
-    
-        if sess1_data.op.reached_count > 0
-            array.unshift(data, sess1_data)
-        if sess2_data.op.reached_count > 0
-            array.unshift(data, sess2_data)
-        if sess3_data.op.reached_count > 0
-            array.unshift(data, sess3_data)
-        if sess4_data.op.reached_count > 0
-            array.unshift(data, sess4_data)
-    
-        table.cell(tbl_op, 0, 0, 'Opening range('+ syminfo.ticker +')' + (array.size(data) == 0 ? ' (No data)' : ''), text_size=i_info_size)
-        table.merge_cells(tbl_op, 0, 0, 6, 0)
-    
-        if array.size(data) > 0
-            table.cell(tbl_op, 0, 1, 'Session', text_size=i_info_size)
-            table.cell(tbl_op, 1, 1, 'Sum', text_size=i_info_size)
-            table.cell(tbl_op, 2, 1, 'R1', text_size=i_info_size)
-            table.cell(tbl_op, 3, 1, 'S1', text_size=i_info_size)
-            table.cell(tbl_op, 4, 1, 'R2', text_size=i_info_size)
-            table.cell(tbl_op, 5, 1, 'S2', text_size=i_info_size)
-            table.cell(tbl_op, 6, 1, 'Total', text_size=i_info_size)
-    
-            for i = 0 to array.size(data) -1
-                my_data = array.get(data, i)
-                row_index := row_index + i
-                table.cell(tbl_op, 0, row_index, my_data.name, text_size=i_info_size, text_color=color_white, text_halign=text.align_left)
-                table.cell(tbl_op, 1, row_index, str.format('{0,number,percent}', my_data.op.reached_count    / my_data.op.total_count), text_font_family=font.family_monospace, text_halign=text.align_right, text_color=color_white, text_size=i_info_size)
-                table.cell(tbl_op, 2, row_index, str.format('{0,number,percent}', my_data.op.reached_R1_count / my_data.op.total_count), text_font_family=font.family_monospace, text_halign=text.align_right, text_color=color_white, text_size=i_info_size)
-                table.cell(tbl_op, 3, row_index, str.format('{0,number,percent}', my_data.op.reached_S1_count / my_data.op.total_count), text_font_family=font.family_monospace, text_halign=text.align_right, text_color=color_white, text_size=i_info_size)
-                table.cell(tbl_op, 4, row_index, str.format('{0,number,percent}', my_data.op.reached_R2_count / my_data.op.total_count), text_font_family=font.family_monospace, text_halign=text.align_right, text_color=color_white, text_size=i_info_size)
-                table.cell(tbl_op, 5, row_index, str.format('{0,number,percent}', my_data.op.reached_S2_count / my_data.op.total_count), text_font_family=font.family_monospace, text_halign=text.align_right, text_color=color_white, text_size=i_info_size)
-                table.cell(tbl_op, 6, row_index, str.tostring(my_data.op.total_count), text_font_family=font.family_monospace, text_halign=text.align_right, text_color=color_white, text_size=i_info_size)
-    
-    
-    if i_show_analysis2 and barstate.islast
-        max = 100
-        g_base = ta.lowest(max)
-        s3_count = 0
-        s2_count = 0
-    
-        if array.size(sess1_data.price_ranges) > 0 and array.size(sess3_data.price_ranges) > 0
-            for i = 0 to array.size(sess1_data.price_ranges) - 1
-                s1 = array.get(sess1_data.price_ranges, i)
-                s3 = array.get(sess3_data.price_ranges, i)
-    
-                if s3 / s1 > 1
-                    s3_count := s3_count + 1
-    
-            row_index := row_index + 1
-    
-            table.cell(tbl_op, 0, row_index, sess3_data.name + ' > ' + sess1_data.name, text_halign=text.align_left, text_color=color_white, text_size=i_info_size)
-            table.cell(tbl_op, 4, row_index, str.tostring(s3_count) + ' / ' + str.tostring(array.size(sess1_data.price_ranges)), text_halign=text.align_right, text_font_family=font.family_monospace, text_color=color_white, text_size=i_info_size)
-            table.cell(tbl_op, 6, row_index, str.format('{0,number,percent}', s3_count / array.size(sess1_data.price_ranges))  , text_halign=text.align_right, text_font_family=font.family_monospace, text_color=color_white, text_size=i_info_size)
-    
-            table.merge_cells(tbl_op, 0, row_index, 3, row_index)
-            table.merge_cells(tbl_op, 4, row_index, 5, row_index)
 
     // ======== End of sessions.pine ========

@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.3.4
+ * Versi     : 1.3.5
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -207,9 +207,9 @@ onTick = (length, _moment, _, ta) => {
   // Bersihkan drawing lama setiap ada pembaruan tick
   clearOldDrawings();
 
-  // inputs di FX Replay adalah injected scope variable (bukan parameter).
+  // input di FX Replay adalah injected scope variable (bukan parameter).
   // Guard ini memastikan kita tidak crash jika runtime belum menginjeksikannya.
-  if (typeof inputs === 'undefined') return;
+  if (typeof input === 'undefined') return;
 
   const currentBarTime = time(0);
   if (typeof currentBarTime !== 'number' || isNaN(currentBarTime)) return;
@@ -217,13 +217,13 @@ onTick = (length, _moment, _, ta) => {
   // ==========================================================================
   // 1. RENDER ASIA RANGE (KALENDER ARITMATIKA MURNI)
   // ==========================================================================
-  if (inputs && inputs.showAsia) {
-    const tzOffsetMin = getTzMinutes(inputs.asiaTz);
-    const sessTime = parseSessionTime(inputs.asiaSession);
-    const boxColor = inputs.asiaColor || color.gray;
-    const boxTransparency = typeof inputs.asiaTransparency === 'number' ? inputs.asiaTransparency : 85;
-    const labelTitle = inputs.showLabel ? (inputs.labelText || 'Asia') : undefined;
-    const totalDaysToScan = typeof inputs.asiaHistoryCount === 'number' ? Math.max(1, Math.min(30, inputs.asiaHistoryCount)) : 5;
+  if (input && input.showAsia) {
+    const tzOffsetMin = getTzMinutes(input.asiaTz);
+    const sessTime = parseSessionTime(input.asiaSession);
+    const boxColor = input.asiaColor || color.gray;
+    const boxTransparency = typeof input.asiaTransparency === 'number' ? input.asiaTransparency : 85;
+    const labelTitle = input.showLabel ? (input.labelText || 'Asia') : undefined;
+    const totalDaysToScan = typeof input.asiaHistoryCount === 'number' ? Math.max(1, Math.min(30, input.asiaHistoryCount)) : 5;
 
     const boxStyle = {
       color: boxColor,
@@ -232,11 +232,11 @@ onTick = (length, _moment, _, ta) => {
       transparency: boxTransparency,
       linewidth: 1,
       extendRight: false,
-      showLabel: Boolean(inputs.showLabel),
+      showLabel: Boolean(input.showLabel),
       textColor: boxColor,
       fontSize: 11,
       bold: true,
-      middleLine: inputs.showMidline
+      middleLine: input.showMidline
         ? {
             showLine: true,
             lineStyle: 2,
@@ -296,20 +296,20 @@ onTick = (length, _moment, _, ta) => {
   // ==========================================================================
   // 2. RENDER HTF CANDLE (MULTI-TIMEFRAME)
   // ==========================================================================
-  if (inputs && inputs.showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
-    const candlesAmount = typeof inputs.htfCandlesAmount === 'number' ? Math.max(1, inputs.htfCandlesAmount) : 4;
-    const isProjected = inputs.htfMode === 'Projected (Kanan Chart)';
-    const bullColor = inputs.htfBullColor || color.green;
-    const bearColor = inputs.htfBearColor || color.red;
-    const wickColor = inputs.htfWickColor || color.black;
-    const lineWidth = typeof inputs.htfLineWidth === 'number' ? inputs.htfLineWidth : 1;
-    const htfDuration = estimateTfDurationMs(inputs.htfTf);
+  if (input && input.showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
+    const candlesAmount = typeof input.htfCandlesAmount === 'number' ? Math.max(1, input.htfCandlesAmount) : 4;
+    const isProjected = input.htfMode === 'Projected (Kanan Chart)';
+    const bullColor = input.htfBullColor || color.green;
+    const bearColor = input.htfBearColor || color.red;
+    const wickColor = input.htfWickColor || color.black;
+    const lineWidth = typeof input.htfLineWidth === 'number' ? input.htfLineWidth : 1;
+    const htfDuration = estimateTfDurationMs(input.htfTf);
 
     // Hitung durasi 1 bar chart saat ini untuk mode Projected
     const barDuration = (time(0) && time(1)) ? Math.abs(time(0) - time(1)) : 60000;
-    const offsetBars = typeof inputs.htfOffset === 'number' ? inputs.htfOffset : 5;
-    const spaceBars = typeof inputs.htfSpace === 'number' ? inputs.htfSpace : 2;
-    const widthBars = typeof inputs.htfWidth === 'number' ? inputs.htfWidth : 4;
+    const offsetBars = typeof input.htfOffset === 'number' ? input.htfOffset : 5;
+    const spaceBars = typeof input.htfSpace === 'number' ? input.htfSpace : 2;
+    const widthBars = typeof input.htfWidth === 'number' ? input.htfWidth : 4;
 
     // Loop sejumlah candle HTF dari candle saat ini (i = 0) ke belakang
     for (let i = 0; i < candlesAmount; i++) {
@@ -353,8 +353,8 @@ onTick = (length, _moment, _, ta) => {
 
       // Label Candle HTF
       let candleLabel = undefined;
-      if (inputs.htfShowLabel && i === 0) {
-        const tfLabelText = String(inputs.htfTf || 'HTF').toUpperCase();
+      if (input.htfShowLabel && i === 0) {
+        const tfLabelText = String(input.htfTf || 'HTF').toUpperCase();
         candleLabel = tfLabelText;
       }
 
@@ -382,7 +382,7 @@ onTick = (length, _moment, _, ta) => {
       trackDrawing(bodyBoxId);
 
       // 2. Gambar Sumbu (Wick) Candle HTF
-      if (inputs.htfShowWick && typeof newPoint === 'function' && typeof trendLine === 'function') {
+      if (input.htfShowWick && typeof newPoint === 'function' && typeof trendLine === 'function') {
         const lineStyle = { linecolor: wickColor, linewidth: lineWidth };
 
         // Upper Wick (High ke Body Top)
@@ -408,9 +408,9 @@ onTick = (length, _moment, _, ta) => {
 
       // 3. Garis Level Tracing ke Chart LTF (H/L Line & O/C Line)
       if (typeof newPoint === 'function' && typeof trendLine === 'function') {
-        const traceColor = inputs.htfLineColor || color.gray;
+        const traceColor = input.htfLineColor || color.gray;
 
-        if (inputs.showHtfHlLines && i < 2) {
+        if (input.showHtfHlLines && i < 2) {
           // Garis High
           const hlLineId1 = trendLine(
             newPoint(htfTime, htfHigh),
@@ -428,7 +428,7 @@ onTick = (length, _moment, _, ta) => {
           trackDrawing(hlLineId2);
         }
 
-        if (inputs.showHtfOcLines && i < 2) {
+        if (input.showHtfOcLines && i < 2) {
           // Garis Open
           const ocLineId1 = trendLine(
             newPoint(htfTime, htfOpen),

@@ -3,11 +3,42 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.3.5
+ * Versi     : 1.3.6
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
  */
+
+// ----------------------------------------------------------------------------
+// Input Value Storage — Diisi oleh init(), dipakai oleh onTick().
+// Pola: tangkap return value dari input.xxx() karena TypeScript type 'Input'
+// hanya mendeklarasikan method, bukan property user-defined seperti input.showAsia.
+// ----------------------------------------------------------------------------
+var _showAsia        = true;
+var _asiaSession     = '0000-0800';
+var _asiaTz          = 'UTC+0';
+var _asiaColor       = null;
+var _asiaTransparency= 85;
+var _showMidline     = true;
+var _asiaHistoryCount= 5;
+var _showLabel       = true;
+var _labelText       = 'Asia';
+var _showHtf         = true;
+var _htfTf           = '4h';
+var _htfCandlesAmount= 4;
+var _htfMode         = 'Overlay (Pada Chart)';
+var _htfBullColor    = null;
+var _htfBearColor    = null;
+var _htfWickColor    = null;
+var _htfShowWick     = true;
+var _htfLineWidth    = 1;
+var _htfOffset       = 5;
+var _htfSpace        = 2;
+var _htfWidth        = 4;
+var _htfShowLabel    = true;
+var _showHtfHlLines  = true;
+var _showHtfOcLines  = false;
+var _htfLineColor    = null;
 
 init = () => {
   // Pasang indikator di panel chart utama
@@ -15,44 +46,45 @@ init = () => {
 
   // --------------------------------------------------------------------------
   // 1. Modul Asia Range Settings
+  // Tangkap return value dari setiap input.xxx() — ini adalah pola yang benar
+  // di FX Replay agar nilai input bisa dibaca di onTick() tanpa menyentuh
+  // property dynamic di type 'Input' yang TypeScript tidak mengenalnya.
   // --------------------------------------------------------------------------
-  input.bool('Tampilkan Asia Range', true, 'showAsia', 'Modul Asia Range');
-  input.session('Jam Sesi Asia', '0000-0800', 'asiaSession', 'Modul Asia Range');
-  input.str(
+  _showAsia         = input.bool('Tampilkan Asia Range', true, 'showAsia', 'Modul Asia Range');
+  _asiaSession      = input.session('Jam Sesi Asia', '0000-0800', 'asiaSession', 'Modul Asia Range');
+  _asiaTz           = input.str(
     'Timezone',
     'UTC+0',
     'asiaTz',
     [
-
-      
       'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5', 'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1',
       'UTC+0', 'UTC+1', 'UTC+2', 'UTC+3', 'UTC+4', 'UTC+5', 'UTC+6', 'UTC+7', 'UTC+8', 'UTC+9', 'UTC+10', 'UTC+11', 'UTC+12'
     ],
     undefined,
     'Modul Asia Range'
   );
-  input.color('Warna Box Asia', color.gray, 'asiaColor', 'Modul Asia Range');
-  input.int('Transparansi Background (%)', 85, 'asiaTransparency', 0, 100, 1, undefined, 'Modul Asia Range');
-  input.bool('Tampilkan Garis Tengah (50%)', true, 'showMidline', 'Modul Asia Range');
-  input.int('Jumlah Sesi Historis', 5, 'asiaHistoryCount', 1, 30, 1, 'Berapa sesi Asia terakhir yang ditampilkan di chart', 'Modul Asia Range');
+  _asiaColor        = input.color('Warna Box Asia', color.gray, 'asiaColor', 'Modul Asia Range');
+  _asiaTransparency = input.int('Transparansi Background (%)', 85, 'asiaTransparency', 0, 100, 1, undefined, 'Modul Asia Range');
+  _showMidline      = input.bool('Tampilkan Garis Tengah (50%)', true, 'showMidline', 'Modul Asia Range');
+  _asiaHistoryCount = input.int('Jumlah Sesi Historis', 5, 'asiaHistoryCount', 1, 30, 1, 'Berapa sesi Asia terakhir yang ditampilkan di chart', 'Modul Asia Range');
 
   // Label Sesi Asia
-  input.bool('Tampilkan Label Sesi', true, 'showLabel', 'Label Asia');
-  input.str('Teks Label', 'Asia', 'labelText', undefined, undefined, 'Label Asia');
+  _showLabel        = input.bool('Tampilkan Label Sesi', true, 'showLabel', 'Label Asia');
+  _labelText        = input.str('Teks Label', 'Asia', 'labelText', undefined, undefined, 'Label Asia');
 
   // --------------------------------------------------------------------------
   // 2. Modul HTF Candle Settings (Multi-Timeframe)
   // --------------------------------------------------------------------------
-  input.bool('Tampilkan HTF Candle', true, 'showHtf', 'Modul HTF Candle');
-  
+  _showHtf          = input.bool('Tampilkan HTF Candle', true, 'showHtf', 'Modul HTF Candle');
+
   // Daftarkan timeframe HTF ke runtime MTF FX Replay
-  const tm = input.timeframe('HTF Timeframe', '4h', 'htfTf', 'Modul HTF Candle');
+  _htfTf            = input.timeframe('HTF Timeframe', '4h', 'htfTf', 'Modul HTF Candle');
   if (typeof mtf !== 'undefined' && mtf && typeof mtf.timeframe === 'function') {
-    mtf.timeframe(tm);
+    mtf.timeframe(_htfTf);
   }
 
-  input.int('Jumlah Candle HTF', 4, 'htfCandlesAmount', 1, 15, 1, 'Berapa candle HTF yang ingin ditampilkan', 'Modul HTF Candle');
-  input.str(
+  _htfCandlesAmount = input.int('Jumlah Candle HTF', 4, 'htfCandlesAmount', 1, 15, 1, 'Berapa candle HTF yang ingin ditampilkan', 'Modul HTF Candle');
+  _htfMode          = input.str(
     'Mode Tampilan HTF',
     'Overlay (Pada Chart)',
     'htfMode',
@@ -62,25 +94,25 @@ init = () => {
   );
 
   // Pewarnaan & Sumbu HTF
-  input.color('Warna Bullish HTF', color.green, 'htfBullColor', 'Styling HTF');
-  input.color('Warna Bearish HTF', color.red, 'htfBearColor', 'Styling HTF');
-  input.color('Warna Wick / Border HTF', color.black, 'htfWickColor', 'Styling HTF');
-  input.bool('Tampilkan Sumbu (Wick)', true, 'htfShowWick', 'Styling HTF');
-  input.int('Ketebalan Garis / Sumbu', 1, 'htfLineWidth', 1, 4, 1, undefined, 'Styling HTF');
+  _htfBullColor     = input.color('Warna Bullish HTF', color.green, 'htfBullColor', 'Styling HTF');
+  _htfBearColor     = input.color('Warna Bearish HTF', color.red, 'htfBearColor', 'Styling HTF');
+  _htfWickColor     = input.color('Warna Wick / Border HTF', color.black, 'htfWickColor', 'Styling HTF');
+  _htfShowWick      = input.bool('Tampilkan Sumbu (Wick)', true, 'htfShowWick', 'Styling HTF');
+  _htfLineWidth     = input.int('Ketebalan Garis / Sumbu', 1, 'htfLineWidth', 1, 4, 1, undefined, 'Styling HTF');
 
   // Offset & Posisi (Untuk Mode Projected)
-  input.int('Offset Kanan (Bar)', 5, 'htfOffset', 1, 50, 1, 'Jarak candle HTF dari candle terakhir chart', 'Posisi Projected HTF');
-  input.int('Spacing Antar Candle (Bar)', 2, 'htfSpace', 1, 10, 1, 'Jarak antar candle HTF', 'Posisi Projected HTF');
-  input.int('Lebar Candle (Bar)', 4, 'htfWidth', 1, 20, 1, 'Lebar body candle HTF dalam jumlah bar', 'Posisi Projected HTF');
+  _htfOffset        = input.int('Offset Kanan (Bar)', 5, 'htfOffset', 1, 50, 1, 'Jarak candle HTF dari candle terakhir chart', 'Posisi Projected HTF');
+  _htfSpace         = input.int('Spacing Antar Candle (Bar)', 2, 'htfSpace', 1, 10, 1, 'Jarak antar candle HTF', 'Posisi Projected HTF');
+  _htfWidth         = input.int('Lebar Candle (Bar)', 4, 'htfWidth', 1, 20, 1, 'Lebar body candle HTF dalam jumlah bar', 'Posisi Projected HTF');
 
   // Label HTF
-  input.bool('Tampilkan Label HTF', true, 'htfShowLabel', 'Label HTF');
+  _htfShowLabel     = input.bool('Tampilkan Label HTF', true, 'htfShowLabel', 'Label HTF');
   input.str('Posisi Label HTF', 'Top', 'htfLabelPos', ['Top', 'Bottom', 'Both'], undefined, 'Label HTF');
 
   // Garis Level HTF ke Chart LTF (Tracing)
-  input.bool('Tampilkan Garis H/L HTF di LTF', true, 'showHtfHlLines', 'Level HTF Trace');
-  input.bool('Tampilkan Garis O/C HTF di LTF', false, 'showHtfOcLines', 'Level HTF Trace');
-  input.color('Warna Garis Level HTF', color.gray, 'htfLineColor', 'Level HTF Trace');
+  _showHtfHlLines   = input.bool('Tampilkan Garis H/L HTF di LTF', true, 'showHtfHlLines', 'Level HTF Trace');
+  _showHtfOcLines   = input.bool('Tampilkan Garis O/C HTF di LTF', false, 'showHtfOcLines', 'Level HTF Trace');
+  _htfLineColor     = input.color('Warna Garis Level HTF', color.gray, 'htfLineColor', 'Level HTF Trace');
 };
 
 // ----------------------------------------------------------------------------
@@ -207,23 +239,19 @@ onTick = (length, _moment, _, ta) => {
   // Bersihkan drawing lama setiap ada pembaruan tick
   clearOldDrawings();
 
-  // input di FX Replay adalah injected scope variable (bukan parameter).
-  // Guard ini memastikan kita tidak crash jika runtime belum menginjeksikannya.
-  if (typeof input === 'undefined') return;
-
   const currentBarTime = time(0);
   if (typeof currentBarTime !== 'number' || isNaN(currentBarTime)) return;
 
   // ==========================================================================
   // 1. RENDER ASIA RANGE (KALENDER ARITMATIKA MURNI)
   // ==========================================================================
-  if (input && input.showAsia) {
-    const tzOffsetMin = getTzMinutes(input.asiaTz);
-    const sessTime = parseSessionTime(input.asiaSession);
-    const boxColor = input.asiaColor || color.gray;
-    const boxTransparency = typeof input.asiaTransparency === 'number' ? input.asiaTransparency : 85;
-    const labelTitle = input.showLabel ? (input.labelText || 'Asia') : undefined;
-    const totalDaysToScan = typeof input.asiaHistoryCount === 'number' ? Math.max(1, Math.min(30, input.asiaHistoryCount)) : 5;
+  if (_showAsia) {
+    const tzOffsetMin = getTzMinutes(_asiaTz);
+    const sessTime = parseSessionTime(_asiaSession);
+    const boxColor = _asiaColor || color.gray;
+    const boxTransparency = typeof _asiaTransparency === 'number' ? _asiaTransparency : 85;
+    const labelTitle = _showLabel ? (_labelText || 'Asia') : undefined;
+    const totalDaysToScan = typeof _asiaHistoryCount === 'number' ? Math.max(1, Math.min(30, _asiaHistoryCount)) : 5;
 
     const boxStyle = {
       color: boxColor,
@@ -232,11 +260,11 @@ onTick = (length, _moment, _, ta) => {
       transparency: boxTransparency,
       linewidth: 1,
       extendRight: false,
-      showLabel: Boolean(input.showLabel),
+      showLabel: Boolean(_showLabel),
       textColor: boxColor,
       fontSize: 11,
       bold: true,
-      middleLine: input.showMidline
+      middleLine: _showMidline
         ? {
             showLine: true,
             lineStyle: 2,
@@ -296,20 +324,20 @@ onTick = (length, _moment, _, ta) => {
   // ==========================================================================
   // 2. RENDER HTF CANDLE (MULTI-TIMEFRAME)
   // ==========================================================================
-  if (input && input.showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
-    const candlesAmount = typeof input.htfCandlesAmount === 'number' ? Math.max(1, input.htfCandlesAmount) : 4;
-    const isProjected = input.htfMode === 'Projected (Kanan Chart)';
-    const bullColor = input.htfBullColor || color.green;
-    const bearColor = input.htfBearColor || color.red;
-    const wickColor = input.htfWickColor || color.black;
-    const lineWidth = typeof input.htfLineWidth === 'number' ? input.htfLineWidth : 1;
-    const htfDuration = estimateTfDurationMs(input.htfTf);
+  if (_showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
+    const candlesAmount = typeof _htfCandlesAmount === 'number' ? Math.max(1, _htfCandlesAmount) : 4;
+    const isProjected = _htfMode === 'Projected (Kanan Chart)';
+    const bullColor = _htfBullColor || color.green;
+    const bearColor = _htfBearColor || color.red;
+    const wickColor = _htfWickColor || color.black;
+    const lineWidth = typeof _htfLineWidth === 'number' ? _htfLineWidth : 1;
+    const htfDuration = estimateTfDurationMs(_htfTf);
 
     // Hitung durasi 1 bar chart saat ini untuk mode Projected
     const barDuration = (time(0) && time(1)) ? Math.abs(time(0) - time(1)) : 60000;
-    const offsetBars = typeof input.htfOffset === 'number' ? input.htfOffset : 5;
-    const spaceBars = typeof input.htfSpace === 'number' ? input.htfSpace : 2;
-    const widthBars = typeof input.htfWidth === 'number' ? input.htfWidth : 4;
+    const offsetBars = typeof _htfOffset === 'number' ? _htfOffset : 5;
+    const spaceBars = typeof _htfSpace === 'number' ? _htfSpace : 2;
+    const widthBars = typeof _htfWidth === 'number' ? _htfWidth : 4;
 
     // Loop sejumlah candle HTF dari candle saat ini (i = 0) ke belakang
     for (let i = 0; i < candlesAmount; i++) {
@@ -353,8 +381,8 @@ onTick = (length, _moment, _, ta) => {
 
       // Label Candle HTF
       let candleLabel = undefined;
-      if (input.htfShowLabel && i === 0) {
-        const tfLabelText = String(input.htfTf || 'HTF').toUpperCase();
+      if (_htfShowLabel && i === 0) {
+        const tfLabelText = String(_htfTf || 'HTF').toUpperCase();
         candleLabel = tfLabelText;
       }
 
@@ -382,7 +410,7 @@ onTick = (length, _moment, _, ta) => {
       trackDrawing(bodyBoxId);
 
       // 2. Gambar Sumbu (Wick) Candle HTF
-      if (input.htfShowWick && typeof newPoint === 'function' && typeof trendLine === 'function') {
+      if (_htfShowWick && typeof newPoint === 'function' && typeof trendLine === 'function') {
         const lineStyle = { linecolor: wickColor, linewidth: lineWidth };
 
         // Upper Wick (High ke Body Top)
@@ -408,9 +436,9 @@ onTick = (length, _moment, _, ta) => {
 
       // 3. Garis Level Tracing ke Chart LTF (H/L Line & O/C Line)
       if (typeof newPoint === 'function' && typeof trendLine === 'function') {
-        const traceColor = input.htfLineColor || color.gray;
+        const traceColor = _htfLineColor || color.gray;
 
-        if (input.showHtfHlLines && i < 2) {
+        if (_showHtfHlLines && i < 2) {
           // Garis High
           const hlLineId1 = trendLine(
             newPoint(htfTime, htfHigh),
@@ -428,7 +456,7 @@ onTick = (length, _moment, _, ta) => {
           trackDrawing(hlLineId2);
         }
 
-        if (input.showHtfOcLines && i < 2) {
+        if (_showHtfOcLines && i < 2) {
           // Garis Open
           const ocLineId1 = trendLine(
             newPoint(htfTime, htfOpen),

@@ -110,39 +110,39 @@ method clean_bin(UDT_Store store) =>
     store.labels.clear()
 
 type UDT_AsiaSession
-    int   start_bar
-    int   end_bar
-    float hi
-    float lo
-    float mid
-    box   sess_box
-    line  hi_line
-    line  lo_line
-    line  mid_line
+    int   start_bar = na
+    int   end_bar = na
+    float hi = na
+    float lo = na
+    float mid = na
+    box   sess_box = na
+    line  hi_line = na
+    line  lo_line = na
+    line  mid_line = na
     bool  hi_swept = false
     bool  lo_swept = false
 
 var array<UDT_AsiaSession> asia_sessions = array.new<UDT_AsiaSession>()
 
 type UDT_HTFCandle
-    string tf
-    float  o
-    float  c
-    float  h
-    float  l
-    int    ot
-    int    ct
-    int    o_idx
-    int    c_idx
-    int    h_idx
-    int    l_idx
-    int    candle_left
-    int    candle_right
-    float  candle_top
-    float  candle_bottom
-    int    wick_x
-    bool   is_closed
-    bool   bull
+    string tf = ""
+    float  o = na
+    float  c = na
+    float  h = na
+    float  l = na
+    int    ot = na
+    int    ct = na
+    int    o_idx = na
+    int    c_idx = na
+    int    h_idx = na
+    int    l_idx = na
+    int    candle_left = na
+    int    candle_right = na
+    float  candle_top = na
+    float  candle_bottom = na
+    int    wick_x = na
+    bool   is_closed = false
+    bool   bull = false
 
 var array<UDT_HTFCandle> htf_1_list = array.new<UDT_HTFCandle>()
 var array<UDT_HTFCandle> htf_2_list = array.new<UDT_HTFCandle>()
@@ -192,7 +192,7 @@ if show_asia
         current_asia_hi := math.max(current_asia_hi, high)
         current_asia_lo := math.min(current_asia_lo, low)
         
-        latest = asia_sessions.last()
+        latest = asia_sessions.get(asia_sessions.size() - 1)
         latest.end_bar := bar_index
         latest.hi := current_asia_hi
         latest.lo := current_asia_lo
@@ -204,7 +204,7 @@ if show_asia
             box.set_right(latest.sess_box, bar_index)
 
     else if asia_ended and asia_sessions.size() > 0
-        latest = asia_sessions.last()
+        latest = asia_sessions.get(asia_sessions.size() - 1)
         latest.end_bar := bar_index
         
         ext_target = bar_index + asia_extend_bars
@@ -222,7 +222,7 @@ if show_asia
 
     // Deteksi Liquidity Sweeps setelah sesi Asia selesai
     if not is_in_asia and asia_detect_sweep and asia_sessions.size() > 0
-        latest = asia_sessions.last()
+        latest = asia_sessions.get(asia_sessions.size() - 1)
         if not latest.hi_swept and high > latest.hi
             latest.hi_swept := true
             label.new(x = bar_index, y = high, text = "⚡ Asia High Swept", style = label.style_label_down, color = color.new(asia_hi_col, 20), textcolor = color.black, size = size.small)
@@ -242,9 +242,10 @@ if show_asia
 //#region HTF Candles Engine
 
 method detect_candle(array<UDT_HTFCandle> list, string tf) =>
-    bool is_new_session = ta.change(time(tf)) != 0 or list.size() == 0
+    bool is_new_session = ta.change(time(tf, "")) != 0 or list.size() == 0
     if is_new_session
-        c = UDT_HTFCandle.new(tf = tf)
+        c = UDT_HTFCandle.new()
+        c.tf := tf
         c.o := open
         c.h := high
         c.l := low
@@ -257,10 +258,12 @@ method detect_candle(array<UDT_HTFCandle> list, string tf) =>
         c.l_idx := bar_index
         c.bull  := close >= open
         if list.size() > 0
-            list.first().is_closed := true
+            last_c = list.get(0)
+            last_c.is_closed := true
+            last_c.ct := time
         list.unshift(c)
     else if list.size() > 0
-        c = list.first()
+        c = list.get(0)
         c.c := close
         c.c_idx := bar_index
         c.ct := time
@@ -349,7 +352,7 @@ method draw_htf_candles(array<UDT_HTFCandle> list, int base_offset, string tf, b
         // Buat string judul & hitung mundur candle close
         title_txt = tf_format(tf)
         if htf_countdown_show
-            tc = time_close(tf)
+            tc = time_close(tf, "")
             if not na(tc)
                 rem_ms = math.max(0, tc - timenow)
                 title_txt := title_txt + "\n" + format_countdown(rem_ms)

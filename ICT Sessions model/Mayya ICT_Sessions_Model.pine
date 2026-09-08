@@ -616,7 +616,7 @@ method detect_htf_candle(array<UDT_HTF_Candle> htf_candles, string tf, string lt
             last_candle.ct := time
         htf_candle := candle
     else if in_session(tf, "", na) and htf_candles.size()>0
-        candle = htf_candles.first()
+        candle = htf_candles.get(0)
         candle.c := close
         candle.c_idx := bar_index + 1
         candle.ct := time
@@ -690,7 +690,7 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
     txt = tf_label(tf)
 
     if htf_sweeps_countdown_show
-        tc = time_close(tf)
+        tc = time_close(tf, "")
         if not na(tc)
             rem = math.max(0, tc - timenow)
             txt := txt + "\n" + format_countdown(rem)

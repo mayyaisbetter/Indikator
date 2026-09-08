@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.2.2
+ * Versi     : 1.3.0
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -148,18 +148,22 @@ function parseSessionTime(sessStr) {
 }
 
 /**
- * Mengecek apakah candle timestamp berada dalam sesi waktu tertentu.
+ * Menghitung timestamp UTC awal dan akhir sesi Asia untuk hari ke-N ke belakang.
+ * Menggunakan perhitungan kalender matematis murni tanpa dependensi pada objek eksternal.
  */
-function isTimestampInSession(candleTimestamp, sess, tzOffsetMin, _moment) {
-  if (!candleTimestamp || !sess || !_moment) return false;
-  const m = _moment.utc(candleTimestamp).add(tzOffsetMin, 'minutes');
-  const barMinutes = m.hours() * 60 + m.minutes();
-  if (sess.start <= sess.end) {
-    return barMinutes >= sess.start && barMinutes < sess.end;
-  } else {
-    // Overnight session (misal: 2000-0200)
-    return barMinutes >= sess.start || barMinutes < sess.end;
-  }
+function getSessionUtcRange(baseTimestamp, dayOffset, sessStartMin, sessEndMin, tzOffsetMin) {
+  // Geser waktu acuan ke timezone yang dipilih
+  const shiftedMs = baseTimestamp + (tzOffsetMin * 60000) - (dayOffset * 86400000);
+  const d = new Date(shiftedMs);
+  
+  // Awal hari (jam 00:00) pada timezone tersebut
+  const dayStartLocalMs = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0);
+  
+  // Konversi jam mulai & selesai sesi kembali ke timestamp UTC riil
+  const startUtc = dayStartLocalMs + (sessStartMin * 60000) - (tzOffsetMin * 60000);
+  const endUtc = dayStartLocalMs + (sessEndMin * 60000) - (tzOffsetMin * 60000);
+  
+  return { startUtc, endUtc };
 }
 
 /**
@@ -185,22 +189,22 @@ function estimateTfDurationMs(tfStr) {
 onTick = (length, _moment, _, ta, inputs) => {
   if (length < 2) return;
 
-  // Bersihkan drawing sebelumnya sebelum merender ulang tick saat ini
+  // Bersihkan drawing lama setiap ada pembaruan tick
   clearOldDrawings();
 
   const currentBarTime = time(0);
   if (typeof currentBarTime !== 'number' || isNaN(currentBarTime)) return;
 
   // ==========================================================================
-  // 1. RENDER ASIA RANGE (HISTORIS & AKTIF)
+  // 1. RENDER ASIA RANGE (KALENDER MATEMATIS MURNI & ANTI-NULL)
   // ==========================================================================
   if (inputs && inputs.showAsia) {
-    const tzOffset = getTzMinutes(inputs.asiaTz);
-    const sess = parseSessionTime(inputs.asiaSession);
+    const tzOffsetMin = getTzMinutes(inputs.asiaTz);
+    const sessTime = parseSessionTime(inputs.asiaSession);
     const boxColor = inputs.asiaColor || color.gray;
     const boxTransparency = typeof inputs.asiaTransparency === 'number' ? inputs.asiaTransparency : 85;
     const labelTitle = inputs.showLabel ? (inputs.labelText || 'Asia') : undefined;
-    const maxSessionsToKeep = typeof inputs.asiaHistoryCount === 'number' ? inputs.asiaHistoryCount : 5;
+    const totalDaysToScan = typeof inputs.asiaHistoryCount === 'number' ? Math.max(1, Math.min(30, inputs.asiaHistoryCount)) : 5;
 
     const boxStyle = {
       color: boxColor,
@@ -223,89 +227,50 @@ onTick = (length, _moment, _, ta, inputs) => {
         : undefined
     };
 
-    // Scan bar historis dari masa lalu ke saat ini untuk merekonstruksi sesi Asia
-    const maxScan = Math.min(length - 1, 1500);
-    const detectedSessions = [];
-    let currentSessObj = null;
+    // Cari box sesi Asia untuk setiap hari dari hari ini mundur ke belakang
+    for (let d = 0; d < totalDaysToScan; d++) {
+      const range = getSessionUtcRange(currentBarTime, d, sessTime.start, sessTime.end, tzOffsetMin);
+      const startUtc = range.startUtc;
+      const endUtc = range.endUtc;
 
-    for (let i = maxScan; i >= 0; i--) {
-      const bTime = time(i);
-      const bHigh = high(i);
-      const bLow = low(i);
-      if (typeof bTime !== 'number' || isNaN(bTime) || isNaN(bHigh) || isNaN(bLow)) continue;
+      // Jika sesi hari ini belum mulai sama sekali, abaikan
+      if (startUtc > currentBarTime) continue;
 
-      const inSess = isTimestampInSession(bTime, sess, tzOffset, _moment);
+      const actualEnd = Math.min(endUtc, currentBarTime);
 
-      if (inSess) {
-        if (!currentSessObj) {
-          currentSessObj = {
-            startTime: bTime,
-            endTime: bTime,
-            high: bHigh,
-            low: bLow
-          };
-        } else {
-          currentSessObj.endTime = bTime;
-          currentSessObj.high = Math.max(currentSessObj.high, bHigh);
-          currentSessObj.low = Math.min(currentSessObj.low, bLow);
-        }
-      } else {
-        if (currentSessObj && typeof currentSessObj === 'object') {
-          detectedSessions.push(currentSessObj);
-          currentSessObj = null;
-        }
-      }
-    }
+      let hMax = -Infinity;
+      let lMin = Infinity;
+      let barCount = 0;
 
-    if (currentSessObj && typeof currentSessObj === 'object') {
-      detectedSessions.push(currentSessObj);
-      currentSessObj = null;
-    }
-
-    // Filter sesi valid untuk memastikan tidak ada item null / undefined
-    const validSessions = [];
-    if (Array.isArray(detectedSessions)) {
-      for (let v = 0; v < detectedSessions.length; v++) {
-        const sItem = detectedSessions[v];
-        if (sItem && typeof sItem === 'object') {
-          const st = sItem.startTime;
-          const et = sItem.endTime;
-          if (typeof st === 'number' && typeof et === 'number') {
-            validSessions.push(sItem);
+      // Cari bar-bar di chart yang berada di dalam jendela waktu sesi ini
+      for (let b = 0; b < length; b++) {
+        const bTime = time(b);
+        if (typeof bTime !== 'number' || isNaN(bTime)) continue;
+        if (bTime < startUtc) break; // Sudah melewati rentang sesi hari ini
+        if (bTime <= actualEnd) {
+          const bHigh = high(b);
+          const bLow = low(b);
+          if (typeof bHigh === 'number' && !isNaN(bHigh) && typeof bLow === 'number' && !isNaN(bLow)) {
+            if (bHigh > hMax) hMax = bHigh;
+            if (bLow < lMin) lMin = bLow;
+            barCount++;
           }
         }
       }
-    }
 
-    // Ambil sejumlah sesi terakhir sesuai setting asiaHistoryCount
-    const sessionsToDraw = validSessions.slice(-maxSessionsToKeep);
-
-    for (let s = 0; s < sessionsToDraw.length; s++) {
-      const item = sessionsToDraw[s];
-      // Defensive check: pastikan item dan propertinya valid sebelum dipakai
-      if (!item || typeof item !== 'object') continue;
-
-      const sStart = item.startTime;
-      const sEnd = item.endTime;
-      const sHigh = item.high;
-      const sLow = item.low;
-
-      if (typeof sStart !== 'number' || typeof sEnd !== 'number' || typeof sHigh !== 'number' || typeof sLow !== 'number') {
-        continue;
+      // Jika ada data harga yang valid pada sesi tersebut, gambar box
+      if (barCount > 0 && hMax > lMin) {
+        const finalEndTime = actualEnd > startUtc ? actualEnd : (startUtc + 60000);
+        const boxId = rectangle(
+          startUtc,
+          hMax,
+          finalEndTime,
+          lMin,
+          boxStyle,
+          labelTitle
+        );
+        trackDrawing(boxId);
       }
-      if (sHigh <= sLow) continue;
-
-      const boxEndTime = sEnd > sStart ? sEnd : (sStart + 60000);
-
-      const boxId = rectangle(
-        sStart,
-        sHigh,
-        boxEndTime,
-        sLow,
-        boxStyle,
-        labelTitle
-      );
-      trackDrawing(boxId);
     }
   }
 

@@ -1,3 +1,11 @@
+// This Pine Script®️ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// ©️ Mayya
+
+//@version=6
+indicator("Market Sessions", shorttitle = "Sessions", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 1000)
+
+import boitoki/AwesomeColor/9 as ac
+import boitoki/Utilities/11 as util
 
 ///////////////
 // Groups

@@ -1,5 +1,5 @@
 // This Pine Script®️ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// ©️ VVNA
+// ©️ Mayya
 //@version=6
 
 indicator("ICT Model + Sessions", shorttitle="Mayya ICT", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
@@ -713,22 +713,8 @@ method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf, bool ltf_map) =>
         htf_candles.plot_ltf()
 
     htf_candles
+
 //#endregion
-
-// # ========================================================================= #
-// # |   End   |
-// # ========================================================================= #
-
-
-
-
-
-
-
-
-
-
-
 
 // # ========================================================================= #
 // # |   Plotting   |
@@ -736,7 +722,7 @@ method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf, bool ltf_map) =>
 
 //#region
 
-
+if showICTModel
     bin.clean_bin()
     
     var tf_1_show = htf_sweeps_tf_1_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_1_tf)
@@ -807,6 +793,8 @@ method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf, bool ltf_map) =>
         if tf_6_show
             htf_6_candles.position_htf_candles(offset)
             htf_6_candles.plot_htf(htf_sweeps_tf_6_tf, htf_sweeps_tf_6_map)
+else
+    bin.clean_bin()
 
 //#endregion
 
@@ -821,33 +809,20 @@ method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf, bool ltf_map) =>
 
 //#region
 
-if barstate.isfirst and general_brand_show == false
+if barstate.isfirst and general_brand_show == false and showICTModel
     var table brand = table.new(position.bottom_right, 1, 1, bgcolor = chart.bg_color)
-    table.cell(brand, 0, 0,  "©️ JCICT", text_color = colors_gray, text_halign = text.align_center, text_size = text_size(general_text), text_font_family = font_style(general_font))
+    table.cell(brand, 0, 0,  "©️ Mayya", text_color = colors_gray, text_halign = text.align_center, text_size = text_size(general_text), text_font_family = font_style(general_font))
 
 //#endregion
 
 // # ========================================================================= #
-// # |   End   |
+// # |   Modul Sessions   |
 // # ========================================================================= #
 
-// ======== End of ictmodel.pine ========
-
-
-
-    
-
 if showSessions
-// ======== Start of sessions.pine ========
-// This Pine Script®️ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-    // ©️ VVNA
-    
-    // This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-    // ©️ JCICT
-
-///////////////
-// Groups
-///////////////
+    ///////////////
+    // Groups
+    ///////////////
     g0                      = '// GENERAL //'
     g1_01                   = '// ♯1 SESSION //'
     g1_02                   = '// ♯2 SESSION //'

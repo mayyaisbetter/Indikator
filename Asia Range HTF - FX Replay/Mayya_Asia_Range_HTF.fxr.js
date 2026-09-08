@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.3.1
+ * Versi     : 1.3.2
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -83,33 +83,70 @@ init = () => {
 
 // ----------------------------------------------------------------------------
 // Global Tracking State (Menampung ID gambar agar bisa dibersihkan & di-update)
+// Menggunakan pendekatan fail-safe multi-scope (globalThis, window, var) agar
+// tidak pernah memicu ReferenceError pada runtime sandbox FX Replay.
 // ----------------------------------------------------------------------------
-let drawnDrawingIds = [];
+if (typeof globalThis !== 'undefined') {
+  if (!Array.isArray(globalThis.__mayyaDrawnIds)) globalThis.__mayyaDrawnIds = [];
+}
+if (typeof window !== 'undefined') {
+  if (!Array.isArray(window.__mayyaDrawnIds)) window.__mayyaDrawnIds = [];
+}
+
+var drawnDrawingIds = (typeof globalThis !== 'undefined' && Array.isArray(globalThis.__mayyaDrawnIds))
+  ? globalThis.__mayyaDrawnIds
+  : (typeof window !== 'undefined' && Array.isArray(window.__mayyaDrawnIds))
+    ? window.__mayyaDrawnIds
+    : [];
+
+/**
+ * Mengambil referensi list drawing ID secara aman tanpa ReferenceError
+ */
+function getDrawingList() {
+  if (typeof globalThis !== 'undefined' && Array.isArray(globalThis.__mayyaDrawnIds)) {
+    return globalThis.__mayyaDrawnIds;
+  }
+  if (typeof window !== 'undefined' && Array.isArray(window.__mayyaDrawnIds)) {
+    return window.__mayyaDrawnIds;
+  }
+  if (typeof drawnDrawingIds !== 'undefined' && Array.isArray(drawnDrawingIds)) {
+    return drawnDrawingIds;
+  }
+  return [];
+}
 
 /**
  * Membersihkan semua drawing yang pernah dibuat pada tick sebelumnya
  */
 function clearOldDrawings() {
-  if (typeof deleteDrawingById === 'function' && Array.isArray(drawnDrawingIds) && drawnDrawingIds.length > 0) {
-    for (let i = 0; i < drawnDrawingIds.length; i++) {
-      const id = drawnDrawingIds[i];
-      if (id) {
-        try {
-          deleteDrawingById(id);
-        } catch (e) {}
+  if (typeof deleteDrawingById !== 'function') return;
+  try {
+    var list = getDrawingList();
+    if (Array.isArray(list) && list.length > 0) {
+      for (var i = 0; i < list.length; i++) {
+        var id = list[i];
+        if (id) {
+          try {
+            deleteDrawingById(id);
+          } catch (err) {}
+        }
       }
+      list.length = 0;
     }
-  }
-  drawnDrawingIds = [];
+  } catch (e) {}
 }
 
 /**
  * Menyimpan ID drawing ke dalam tracking list
  */
 function trackDrawing(id) {
-  if (id) {
-    drawnDrawingIds.push(id);
-  }
+  if (!id) return;
+  try {
+    var list = getDrawingList();
+    if (Array.isArray(list)) {
+      list.push(id);
+    }
+  } catch (e) {}
 }
 
 /**

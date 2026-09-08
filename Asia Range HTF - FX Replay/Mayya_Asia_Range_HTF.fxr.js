@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.2.0
+ * Versi     : 1.2.1
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -90,11 +90,14 @@ let drawnDrawingIds = [];
  * Membersihkan semua drawing yang pernah dibuat pada tick sebelumnya
  */
 function clearOldDrawings() {
-  if (typeof deleteDrawingById === 'function' && drawnDrawingIds.length > 0) {
+  if (typeof deleteDrawingById === 'function' && Array.isArray(drawnDrawingIds) && drawnDrawingIds.length > 0) {
     for (let i = 0; i < drawnDrawingIds.length; i++) {
-      try {
-        deleteDrawingById(drawnDrawingIds[i]);
-      } catch (e) {}
+      const id = drawnDrawingIds[i];
+      if (id) {
+        try {
+          deleteDrawingById(id);
+        } catch (e) {}
+      }
     }
   }
   drawnDrawingIds = [];
@@ -115,7 +118,7 @@ function trackDrawing(id) {
  */
 function getTzMinutes(tzStr) {
   if (!tzStr || tzStr === 'UTC+0' || tzStr === 'UTC') return 0;
-  const match = tzStr.match(/UTC([+-])(\d+)/);
+  const match = String(tzStr).match(/UTC([+-])(\d+)/);
   if (!match) return 0;
   const sign = match[1] === '-' ? -1 : 1;
   const hrs = parseInt(match[2], 10) || 0;
@@ -131,6 +134,9 @@ function parseSessionTime(sessStr) {
     return { start: 0, end: 480 };
   }
   const parts = sessStr.split('-');
+  if (parts.length < 2 || parts[0].length < 4 || parts[1].length < 4) {
+    return { start: 0, end: 480 };
+  }
   const sH = parseInt(parts[0].slice(0, 2), 10) || 0;
   const sM = parseInt(parts[0].slice(2, 4), 10) || 0;
   const eH = parseInt(parts[1].slice(0, 2), 10) || 0;
@@ -145,6 +151,7 @@ function parseSessionTime(sessStr) {
  * Mengecek apakah candle timestamp berada dalam sesi waktu tertentu.
  */
 function isTimestampInSession(candleTimestamp, sess, tzOffsetMin, _moment) {
+  if (!candleTimestamp || !sess || !_moment) return false;
   const m = _moment.utc(candleTimestamp).add(tzOffsetMin, 'minutes');
   const barMinutes = m.hours() * 60 + m.minutes();
   if (sess.start <= sess.end) {
@@ -187,7 +194,7 @@ onTick = (length, _moment, _, ta, inputs) => {
   // ==========================================================================
   // 1. RENDER ASIA RANGE (HISTORIS & AKTIF)
   // ==========================================================================
-  if (inputs.showAsia) {
+  if (inputs && inputs.showAsia) {
     const tzOffset = getTzMinutes(inputs.asiaTz);
     const sess = parseSessionTime(inputs.asiaSession);
     const boxColor = inputs.asiaColor || color.gray;
@@ -217,7 +224,7 @@ onTick = (length, _moment, _, ta, inputs) => {
     };
 
     // Scan bar historis dari masa lalu ke saat ini untuk merekonstruksi sesi Asia
-    const maxScan = Math.min(length - 1, 2000);
+    const maxScan = Math.min(length - 1, 1500);
     const detectedSessions = [];
     let currentSessObj = null;
 
@@ -243,40 +250,55 @@ onTick = (length, _moment, _, ta, inputs) => {
           currentSessObj.low = Math.min(currentSessObj.low, bLow);
         }
       } else {
-        if (currentSessObj) {
+        if (currentSessObj && currentSessObj.startTime) {
           detectedSessions.push(currentSessObj);
           currentSessObj = null;
         }
       }
     }
 
-    if (currentSessObj) {
+    if (currentSessObj && currentSessObj.startTime) {
       detectedSessions.push(currentSessObj);
+      currentSessObj = null;
+    }
+
+    // Filter sesi valid untuk memastikan tidak ada item null / undefined
+    const validSessions = [];
+    for (let v = 0; v < detectedSessions.length; v++) {
+      const sItem = detectedSessions[v];
+      if (sItem && typeof sItem === 'object' && sItem.startTime && sItem.endTime) {
+        validSessions.push(sItem);
+      }
     }
 
     // Ambil sejumlah sesi terakhir sesuai setting asiaHistoryCount
-    const sessionsToDraw = detectedSessions.slice(-maxSessionsToKeep);
+    const sessionsToDraw = validSessions.slice(-maxSessionsToKeep);
 
     for (let s = 0; s < sessionsToDraw.length; s++) {
       const item = sessionsToDraw[s];
-      if (item.startTime && item.endTime && item.high > item.low) {
-        const boxId = rectangle(
-          item.startTime,
-          item.high,
-          item.endTime,
-          item.low,
-          boxStyle,
-          labelTitle
-        );
-        trackDrawing(boxId);
-      }
+      // Defensive check: pastikan item bukan null/undefined sebelum mengakses properti
+      if (!item || typeof item !== 'object') continue;
+      if (!item.startTime || !item.endTime) continue;
+      if (isNaN(item.high) || isNaN(item.low) || item.high <= item.low) continue;
+
+      const boxEndTime = item.endTime > item.startTime ? item.endTime : (item.startTime + 60000);
+
+      const boxId = rectangle(
+        item.startTime,
+        item.high,
+        boxEndTime,
+        item.low,
+        boxStyle,
+        labelTitle
+      );
+      trackDrawing(boxId);
     }
   }
 
   // ==========================================================================
   // 2. RENDER HTF CANDLE (MULTI-TIMEFRAME)
   // ==========================================================================
-  if (inputs.showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
+  if (inputs && inputs.showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
     const candlesAmount = typeof inputs.htfCandlesAmount === 'number' ? Math.max(1, inputs.htfCandlesAmount) : 4;
     const isProjected = inputs.htfMode === 'Projected (Kanan Chart)';
     const bullColor = inputs.htfBullColor || color.green;
@@ -314,7 +336,6 @@ onTick = (length, _moment, _, ta, inputs) => {
 
       if (isProjected) {
         // Mode Projected: Lilin HTF berjejer rapi di sebelah kanan chart
-        // i = 0 adalah candle terbaru di paling kiri susunan projected, atau sebaliknya
         const candleIndex = candlesAmount - 1 - i;
         const shiftBars = offsetBars + (widthBars + spaceBars) * candleIndex;
         startTime = currentBarTime + (shiftBars * barDuration);

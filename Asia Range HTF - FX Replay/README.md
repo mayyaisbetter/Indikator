@@ -4,16 +4,16 @@ Panduan penggunaan dan instalasi indikator **Asia Range & HTF Candle** untuk pla
 
 ---
 
-## ❓ Mengapa Muncul Peringatan di FX Replay?
+## ❓ Mengapa Sebelumnya Tidak Muncul di FX Replay?
 
-Di FX Replay muncul notifikasi:
-> **⚠️ Pine Script detected**  
-> *"FX Replay uses a different scripting engine. You can use AI to convert your Pine Script into a supported format."*
-
-### Penjelasan:
-1. **TradingView** menggunakan bahasa pemrograman **Pine Script** (`.pine`).
-2. **FX Replay** **TIDAK** menjalankan Pine Script secara langsung. FX Replay menggunakan scripting engine bawaan bernama **FXR Script** (`//@version=1`) yang berbasis **JavaScript / TypeScript**.
-3. Peringatan tersebut memberi tahu bahwa kode yang di-paste adalah sintaks Pine Script, sehingga tidak bisa langsung dijalankan oleh compiler FX Replay.
+1. **Pendeteksian Sesi Historis**:  
+   Pada versi awal, box sesi Asia hanya terpicu jika terjadi transisi live saat replay berjalan melewati jam sesi. Jika Anda membuka chart di luar jam sesi (misal jam 17:00 seperti pada screenshot), box sesi Asia sebelumnya belum ter-scan. Pada versi 1.2.0 ini, script secara otomatis melakukan scanning bar historis (hingga 2000 bar) sehingga sesi Asia hari ini maupun sesi kemarin langsung muncul seketika saat Anda menekan tombol **Run**!
+2. **HTF Candle Multi-Candle & Settings**:  
+   HTF Candle kini tidak hanya 1 candle, melainkan dapat diatur jumlahnya (misal 2, 4, 6, hingga 15 candle) seperti di Pine Script, dengan 2 mode tampilan:
+   - **Overlay (Pada Chart)**: Candle HTF membungkus bar LTF di waktu historis aslinya.
+   - **Projected (Kanan Chart)**: Candle HTF berjejer rapi di sebelah kanan chart dengan pengaturan offset, lebar bar, dan spasi seperti di TradingView/Pine Script.
+3. **Tracing Level HTF ke LTF**:  
+   Garis High/Low dan Open/Close candle HTF dapat diproyeksikan langsung ke chart LTF.
 
 ---
 
@@ -21,30 +21,41 @@ Di FX Replay muncul notifikasi:
 
 1. Buka sesi chart Anda di [FX Replay](https://www.fxreplay.com).
 2. Di pojok kanan bawah chart, buka **FXR Code editor, v1**.
-3. Buat file / script baru atau hapus seluruh teks template yang ada di editor.
-4. Buka file [`Mayya_Asia_Range_HTF.fxr.js`](./Mayya_Asia_Range_HTF.fxr.js).
-5. Salin (**Copy**) seluruh isi kode dari file tersebut, lalu tempel (**Paste**) ke dalam editor FX Replay.
-6. Klik tombol **Run** atau **Save & Run** di bagian atas editor.
-7. Indikator Asia Range & HTF Candle akan langsung aktif di chart FX Replay Anda! ✨
+3. Buka file [`Mayya_Asia_Range_HTF.fxr.js`](./Mayya_Asia_Range_HTF.fxr.js).
+4. Salin (**Copy**) seluruh isi kode dari file tersebut, lalu tempel (**Paste**) menggantikan isi editor di FX Replay.
+5. Klik tombol **Run** di bagian atas editor.
+6. Indikator Asia Range & HTF Candle akan langsung tampil di chart FX Replay Anda! ✨
 
 ---
 
-## ⚙️ Fitur yang Tersedia di Versi FX Replay:
+## ⚙️ Fitur Lengkap di Versi FX Replay (v1.2.0):
 
-- **Asia Range Box**:
-  - **Warna Default**: Abu-abu (*Grey*).
-  - **Transparansi**: Dapat diatur (default: 85%).
-  - **Jam Sesi**: Format `HHMM-HHMM` (default: `0000-0800`).
-  - **Pilihan Timezone Lengkap**: Pilihan UTC dari `UTC-12` hingga `UTC+12` (termasuk `UTC-4` & `UTC-5`).
-  - **Midline (50%)**: Garis tengah equilibrium sesi Asia.
-- **Label Sesi**:
-  - Teks label default: **Asia**.
-  - Toggle aktifkan / nonaktifkan label.
-- **Multi-Timeframe (HTF Candle Overlay)**:
-  - Toggle aktifkan candle HTF (1H, 4H, 1D, dll.) langsung di atas chart LTF.
-  - Pewarnaan Bullish & Bearish HTF.
-- **Watermark Info**:
-  - Toggle Watermark Mayya on/off.
-  - Toggle Subtitle on/off.
-- **Pembersihan Fitur Sesuai Request**:
-  - Tanpa fitur yang tidak diinginkan (tanpa extend, opening range, fibonacci, dots, day/price/pips text).
+### 1. Modul Asia Range Box
+- **Aktif secara default**: Langsung muncul saat Run.
+- **Warna Default**: Abu-abu (*Grey*).
+- **Transparansi Background**: Dapat diatur (default: 85%).
+- **Jam Sesi**: Format `HHMM-HHMM` (default: `0000-0800`).
+- **Pilihan Timezone Lengkap**: Dari `UTC-12` hingga `UTC+12` (termasuk `UTC-4`, `UTC-5`, `UTC+7`, dsb).
+- **Midline (50%)**: Garis tengah equilibrium box Asia.
+- **Jumlah Sesi Historis**: Menentukan berapa box sesi Asia ke belakang yang ingin ditampilkan (default: 5 sesi).
+- **Label Sesi**: Teks label default "Asia" dengan toggle on/off.
+
+### 2. Modul HTF Candle (Multi-Timeframe)
+- **Aktif secara default**: Langsung tampil di chart.
+- **HTF Timeframe**: Pilihan timeframe HTF (4h, 1h, 15m, 1D, 1W, dll).
+- **Jumlah Candle HTF**: Mengatur berapa candle HTF yang ingin ditampilkan (default: 4 candle).
+- **Mode Tampilan**:
+  - `Overlay (Pada Chart)`: Candle HTF membungkus bar chart di rentang waktu candle tersebut.
+  - `Projected (Kanan Chart)`: Candle HTF berjejer di sisi kanan chart.
+- **Pewarnaan & Sumbu**:
+  - Warna Bullish (default: Green) & Bearish (default: Red).
+  - Warna Wick / Border (default: Black).
+  - Toggle tampilkan sumbu (wick) on/off & ketebalan garis.
+- **Pengaturan Posisi Projected**:
+  - Offset kanan (jarak dari candle terakhir).
+  - Spacing antar candle HTF.
+  - Lebar candle HTF (dalam jumlah bar).
+- **Label HTF**: Label timeframe di atas/bawah candle HTF.
+- **Tracing Level HTF ke LTF**:
+  - Garis High & Low candle HTF yang diproyeksikan ke chart LTF.
+  - Garis Open & Close candle HTF yang diproyeksikan ke chart LTF.

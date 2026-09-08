@@ -70,9 +70,7 @@ wm_sub_size                                 = input.string("Small", "Ukuran Subt
 wm_title_color                              = input.color(#00E676, "Warna Title", inline = "wm_col", group = g_wm)
 wm_sub_color                                = input.color(color.gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
 wm_opacity                                  = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
-wm_border_width                             = input.int(0, "Ketebalan Border Box", minval = 0, maxval = 5, group = g_wm, tooltip = "0 = Tanpa border, 1-5 = Ketebalan garis pembatas box")
-wm_border_color                             = input.color(color.new(color.gray, 70), "Warna Border Box", group = g_wm)
-wm_bg_color                                 = input.color(color.new(color.black, 100), "Warna Background Box", group = g_wm)
+
 
 htf_sweeps_tf_1_show                        = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
 htf_sweeps_tf_1_tf                          = input.timeframe("15", "", inline = "1.0", group = "Timeframes")
@@ -789,7 +787,7 @@ format_countdown(int remaining_ms) =>
     if remaining_ms <= 0
         "00:00"
     else
-        total_seconds = math.floor(remaining_ms / 1000)
+        total_seconds = int(math.ceil(remaining_ms / 1000.0))
         days = math.floor(total_seconds / 86400)
         hours = math.floor((total_seconds % 86400) / 3600)
         minutes = math.floor((total_seconds % 3600) / 60)
@@ -821,7 +819,22 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
     txt = format_text_style(tf_label(tf), general_font)
 
     if htf_sweeps_countdown_show
-        tc = time_close(tf, "")
+        int tc = time_close(tf)
+        int tf_sec = timeframe.in_seconds(tf)
+        int tf_ms = tf_sec * 1000
+
+        // Fallback akurat jika time_close na atau tertinggal (delay <= timenow)
+        if (na(tc) or tc <= timenow) and tf_ms > 0
+            if htf_candles.size() > 0
+                UDT_HTF_Candle curr_candle = htf_candles.get(0)
+                if not na(curr_candle.ot)
+                    tc := curr_candle.ot + tf_ms
+                    if tc <= timenow
+                        int elapsed = timenow - curr_candle.ot
+                        tc := curr_candle.ot + (math.floor(elapsed / tf_ms) + 1) * tf_ms
+            if na(tc) or tc <= timenow
+                tc := time + tf_ms
+
         if not na(tc)
             rem = math.max(0, tc - timenow)
             txt := txt + "\n" + format_text_style(format_countdown(rem), general_font)
@@ -996,7 +1009,7 @@ f_text_halign(string pos) =>
         text.align_right
 
 
-var table wm_tbl = table.new(position = f_table_pos(wm_position), columns = 1, rows = 2, bgcolor = wm_bg_color, frame_color = wm_border_color, frame_width = wm_border_width, border_color = wm_border_color, border_width = wm_border_width)
+var table wm_tbl = table.new(position = f_table_pos(wm_position), columns = 1, rows = 2, bgcolor = color.new(color.black, 100), frame_color = color.new(color.black, 100), frame_width = 0, border_color = color.new(color.black, 100), border_width = 0)
 
 if wm_show and barstate.islast
     halign = f_text_halign(wm_position)

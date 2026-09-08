@@ -172,13 +172,13 @@ if show_asia
         current_asia_lo := low
         
         // Buat objek sesi baru
-        new_sess = UDT_AsiaSession.new(start_bar = bar_index, end_bar = bar_index, hi = high, lo = low, mid = (high + low) / 2)
+        UDT_AsiaSession new_sess = UDT_AsiaSession.new(start_bar = bar_index, end_bar = bar_index, hi = high, lo = low, mid = (high + low) / 2)
         new_sess.sess_box := box.new(left = bar_index, top = high, right = bar_index + 1, bottom = low, border_color = asia_border_col, bgcolor = asia_box_col, border_width = 1)
         asia_sessions.push(new_sess)
         
         // Jaga kapasitas array history
         if asia_sessions.size() > asia_history_count
-            oldest = asia_sessions.shift()
+            UDT_AsiaSession oldest = asia_sessions.shift()
             if not na(oldest.sess_box)
                 oldest.sess_box.delete()
             if not na(oldest.hi_line)
@@ -192,7 +192,7 @@ if show_asia
         current_asia_hi := math.max(current_asia_hi, high)
         current_asia_lo := math.min(current_asia_lo, low)
         
-        latest = asia_sessions.get(asia_sessions.size() - 1)
+        UDT_AsiaSession latest = asia_sessions.get(asia_sessions.size() - 1)
         latest.end_bar := bar_index
         latest.hi := current_asia_hi
         latest.lo := current_asia_lo
@@ -204,7 +204,7 @@ if show_asia
             box.set_right(latest.sess_box, bar_index)
 
     else if asia_ended and asia_sessions.size() > 0
-        latest = asia_sessions.get(asia_sessions.size() - 1)
+        UDT_AsiaSession latest = asia_sessions.get(asia_sessions.size() - 1)
         latest.end_bar := bar_index
         
         ext_target = bar_index + asia_extend_bars
@@ -222,7 +222,7 @@ if show_asia
 
     // Deteksi Liquidity Sweeps setelah sesi Asia selesai
     if not is_in_asia and asia_detect_sweep and asia_sessions.size() > 0
-        latest = asia_sessions.get(asia_sessions.size() - 1)
+        UDT_AsiaSession latest = asia_sessions.get(asia_sessions.size() - 1)
         if not latest.hi_swept and high > latest.hi
             latest.hi_swept := true
             label.new(x = bar_index, y = high, text = "⚡ Asia High Swept", style = label.style_label_down, color = color.new(asia_hi_col, 20), textcolor = color.black, size = size.small)
@@ -244,26 +244,28 @@ if show_asia
 method detect_candle(array<UDT_HTFCandle> list, string tf) =>
     bool is_new_session = ta.change(time(tf, "")) != 0 or list.size() == 0
     if is_new_session
-        c = UDT_HTFCandle.new()
-        c.tf := tf
-        c.o := open
-        c.h := high
-        c.l := low
-        c.c := close
-        c.ot := time
-        c.ct := time
-        c.o_idx := bar_index
-        c.c_idx := bar_index
-        c.h_idx := bar_index
-        c.l_idx := bar_index
-        c.bull  := close >= open
         if list.size() > 0
-            last_c = list.get(0)
+            UDT_HTFCandle last_c = list.get(0)
             last_c.is_closed := true
             last_c.ct := time
+        UDT_HTFCandle c = UDT_HTFCandle.new(
+             tf = tf,
+             o = open,
+             h = high,
+             l = low,
+             c = close,
+             ot = time,
+             ct = time,
+             o_idx = bar_index,
+             c_idx = bar_index,
+             h_idx = bar_index,
+             l_idx = bar_index,
+             bull = close >= open
+         )
         list.unshift(c)
-    else if list.size() > 0
-        c = list.get(0)
+
+    if not is_new_session and list.size() > 0
+        UDT_HTFCandle c = list.get(0)
         c.c := close
         c.c_idx := bar_index
         c.ct := time
@@ -274,10 +276,12 @@ method detect_candle(array<UDT_HTFCandle> list, string tf) =>
             c.l := low
             c.l_idx := bar_index
         c.bull := c.c >= c.o
+    list
 
 method trim_list(array<UDT_HTFCandle> list, int max_count) =>
     while list.size() > max_count
         list.pop()
+    list
 
 tf_format(string tf) =>
     switch tf
@@ -321,7 +325,7 @@ method draw_htf_candles(array<UDT_HTFCandle> list, int base_offset, string tf, b
         float y_high = na
         float y_low  = na
         for i = 0 to count - 1
-            candle = list.get(i)
+            UDT_HTFCandle candle = list.get(i)
             // Hitung koordinat offset visual di sisi kanan chart
             shift = base_offset + (htf_candle_width + htf_candle_space) * (count - i - 1)
             candle.candle_left  := last_bar_index + shift

@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.2.1
+ * Versi     : 1.2.2
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -189,7 +189,7 @@ onTick = (length, _moment, _, ta, inputs) => {
   clearOldDrawings();
 
   const currentBarTime = time(0);
-  if (!currentBarTime || isNaN(currentBarTime)) return;
+  if (typeof currentBarTime !== 'number' || isNaN(currentBarTime)) return;
 
   // ==========================================================================
   // 1. RENDER ASIA RANGE (HISTORIS & AKTIF)
@@ -232,7 +232,7 @@ onTick = (length, _moment, _, ta, inputs) => {
       const bTime = time(i);
       const bHigh = high(i);
       const bLow = low(i);
-      if (!bTime || isNaN(bHigh) || isNaN(bLow)) continue;
+      if (typeof bTime !== 'number' || isNaN(bTime) || isNaN(bHigh) || isNaN(bLow)) continue;
 
       const inSess = isTimestampInSession(bTime, sess, tzOffset, _moment);
 
@@ -250,24 +250,30 @@ onTick = (length, _moment, _, ta, inputs) => {
           currentSessObj.low = Math.min(currentSessObj.low, bLow);
         }
       } else {
-        if (currentSessObj && currentSessObj.startTime) {
+        if (currentSessObj && typeof currentSessObj === 'object') {
           detectedSessions.push(currentSessObj);
           currentSessObj = null;
         }
       }
     }
 
-    if (currentSessObj && currentSessObj.startTime) {
+    if (currentSessObj && typeof currentSessObj === 'object') {
       detectedSessions.push(currentSessObj);
       currentSessObj = null;
     }
 
     // Filter sesi valid untuk memastikan tidak ada item null / undefined
     const validSessions = [];
-    for (let v = 0; v < detectedSessions.length; v++) {
-      const sItem = detectedSessions[v];
-      if (sItem && typeof sItem === 'object' && sItem.startTime && sItem.endTime) {
-        validSessions.push(sItem);
+    if (Array.isArray(detectedSessions)) {
+      for (let v = 0; v < detectedSessions.length; v++) {
+        const sItem = detectedSessions[v];
+        if (sItem && typeof sItem === 'object') {
+          const st = sItem.startTime;
+          const et = sItem.endTime;
+          if (typeof st === 'number' && typeof et === 'number') {
+            validSessions.push(sItem);
+          }
+        }
       }
     }
 
@@ -276,18 +282,26 @@ onTick = (length, _moment, _, ta, inputs) => {
 
     for (let s = 0; s < sessionsToDraw.length; s++) {
       const item = sessionsToDraw[s];
-      // Defensive check: pastikan item bukan null/undefined sebelum mengakses properti
+      // Defensive check: pastikan item dan propertinya valid sebelum dipakai
       if (!item || typeof item !== 'object') continue;
-      if (!item.startTime || !item.endTime) continue;
-      if (isNaN(item.high) || isNaN(item.low) || item.high <= item.low) continue;
 
-      const boxEndTime = item.endTime > item.startTime ? item.endTime : (item.startTime + 60000);
+      const sStart = item.startTime;
+      const sEnd = item.endTime;
+      const sHigh = item.high;
+      const sLow = item.low;
+
+      if (typeof sStart !== 'number' || typeof sEnd !== 'number' || typeof sHigh !== 'number' || typeof sLow !== 'number') {
+        continue;
+      }
+      if (sHigh <= sLow) continue;
+
+      const boxEndTime = sEnd > sStart ? sEnd : (sStart + 60000);
 
       const boxId = rectangle(
-        item.startTime,
-        item.high,
+        sStart,
+        sHigh,
         boxEndTime,
-        item.low,
+        sLow,
         boxStyle,
         labelTitle
       );
@@ -308,7 +322,7 @@ onTick = (length, _moment, _, ta, inputs) => {
     const htfDuration = estimateTfDurationMs(inputs.htfTf);
 
     // Hitung durasi 1 bar chart saat ini untuk mode Projected
-    const barDuration = Math.abs(time(0) - time(1)) || 60000;
+    const barDuration = (time(0) && time(1)) ? Math.abs(time(0) - time(1)) : 60000;
     const offsetBars = typeof inputs.htfOffset === 'number' ? inputs.htfOffset : 5;
     const spaceBars = typeof inputs.htfSpace === 'number' ? inputs.htfSpace : 2;
     const widthBars = typeof inputs.htfWidth === 'number' ? inputs.htfWidth : 4;
@@ -321,7 +335,11 @@ onTick = (length, _moment, _, ta, inputs) => {
       const htfClose = mtf.closeC(i, false);
       const htfTime = mtf.time(i, false);
 
-      if (!htfTime || isNaN(htfOpen) || isNaN(htfClose) || isNaN(htfHigh) || isNaN(htfLow)) {
+      if (typeof htfTime !== 'number' || isNaN(htfTime) ||
+          typeof htfOpen !== 'number' || isNaN(htfOpen) ||
+          typeof htfClose !== 'number' || isNaN(htfClose) ||
+          typeof htfHigh !== 'number' || isNaN(htfHigh) ||
+          typeof htfLow !== 'number' || isNaN(htfLow)) {
         continue;
       }
 
@@ -345,7 +363,7 @@ onTick = (length, _moment, _, ta, inputs) => {
         // Mode Overlay: Lilin HTF digambar persis pada waktu historis candle tersebut
         startTime = htfTime;
         const nextHtfTime = (i > 0) ? mtf.time(i - 1, false) : null;
-        endTime = nextHtfTime && nextHtfTime > startTime ? nextHtfTime : (startTime + htfDuration);
+        endTime = (typeof nextHtfTime === 'number' && nextHtfTime > startTime) ? nextHtfTime : (startTime + htfDuration);
         wickTime = startTime + Math.floor((endTime - startTime) / 2);
       }
 

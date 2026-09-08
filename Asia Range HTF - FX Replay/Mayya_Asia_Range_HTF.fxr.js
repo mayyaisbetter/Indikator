@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.3.0
+ * Versi     : 1.3.1
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -148,21 +148,21 @@ function parseSessionTime(sessStr) {
 }
 
 /**
- * Menghitung timestamp UTC awal dan akhir sesi Asia untuk hari ke-N ke belakang.
- * Menggunakan perhitungan kalender matematis murni tanpa dependensi pada objek eksternal.
+ * Menghitung timestamp UTC awal dan akhir sesi Asia untuk hari ke-dayOffset ke belakang.
+ * Menggunakan aritmatika matematis murni (Math.floor) tanpa membuat objek waktu eksternal.
  */
 function getSessionUtcRange(baseTimestamp, dayOffset, sessStartMin, sessEndMin, tzOffsetMin) {
-  // Geser waktu acuan ke timezone yang dipilih
-  const shiftedMs = baseTimestamp + (tzOffsetMin * 60000) - (dayOffset * 86400000);
-  const d = new Date(shiftedMs);
-  
-  // Awal hari (jam 00:00) pada timezone tersebut
-  const dayStartLocalMs = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0);
-  
-  // Konversi jam mulai & selesai sesi kembali ke timestamp UTC riil
-  const startUtc = dayStartLocalMs + (sessStartMin * 60000) - (tzOffsetMin * 60000);
-  const endUtc = dayStartLocalMs + (sessEndMin * 60000) - (tzOffsetMin * 60000);
-  
+  const tzOffsetMs = tzOffsetMin * 60000;
+  const ONE_DAY_MS = 86400000;
+
+  // Awal hari (00:00:00) pada timezone yang dipilih
+  const dayStartLocal = Math.floor((baseTimestamp + tzOffsetMs) / ONE_DAY_MS) * ONE_DAY_MS;
+  const dayStartUtc = dayStartLocal - tzOffsetMs - (dayOffset * ONE_DAY_MS);
+
+  // Waktu mulai & selesai sesi dalam timestamp UTC
+  const startUtc = dayStartUtc + (sessStartMin * 60000);
+  const endUtc = dayStartUtc + (sessEndMin * 60000);
+
   return { startUtc, endUtc };
 }
 
@@ -196,7 +196,7 @@ onTick = (length, _moment, _, ta, inputs) => {
   if (typeof currentBarTime !== 'number' || isNaN(currentBarTime)) return;
 
   // ==========================================================================
-  // 1. RENDER ASIA RANGE (KALENDER MATEMATIS MURNI & ANTI-NULL)
+  // 1. RENDER ASIA RANGE (KALENDER ARITMATIKA MURNI)
   // ==========================================================================
   if (inputs && inputs.showAsia) {
     const tzOffsetMin = getTzMinutes(inputs.asiaTz);

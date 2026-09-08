@@ -77,10 +77,13 @@ init = () => {
   // --------------------------------------------------------------------------
   _showHtf          = input.bool('Tampilkan HTF Candle', true, 'showHtf', 'Modul HTF Candle');
 
-  // Daftarkan timeframe HTF ke runtime MTF FX Replay
+  // Daftarkan timeframe HTF ke runtime MTF FX Replay (dinormalisasi ke format yang didukung seperti '4h')
   _htfTf            = input.timeframe('HTF Timeframe', '4h', 'htfTf', 'Modul HTF Candle');
   if (typeof mtf !== 'undefined' && mtf && typeof mtf.timeframe === 'function') {
-    mtf.timeframe(_htfTf);
+    var formattedTf = toFxrTimeframe(_htfTf);
+    try {
+      mtf.timeframe(formattedTf);
+    } catch (e) {}
   }
 
   _htfCandlesAmount = input.int('Jumlah Candle HTF', 4, 'htfCandlesAmount', 1, 15, 1, 'Berapa candle HTF yang ingin ditampilkan', 'Modul HTF Candle');
@@ -214,6 +217,126 @@ function getSessionUtcRange(baseTimestamp, dayOffset, sessStartMin, sessEndMin, 
 }
 
 /**
+ * Normalisasi format timeframe input FX Replay ke format resolusi MTF standard (e.g. '4h', '1D').
+ * Mengantisipasi nilai kembalian seperti '4 hours', '4h', '240', '1 hour', '1 day', dll.
+ */
+function toFxrTimeframe(val) {
+  if (!val) return '4h';
+  var str = String(val).trim().toLowerCase();
+
+  // Deteksi jam
+  if (str === '4h' || str.includes('4 hour') || str.includes('4 hr') || str === '240') return '4h';
+  if (str === '1h' || str.includes('1 hour') || str.includes('1 hr') || str === '60') return '1h';
+  if (str === '2h' || str.includes('2 hour') || str.includes('2 hr') || str === '120') return '2h';
+  if (str === '3h' || str.includes('3 hour') || str.includes('3 hr') || str === '180') return '3h';
+  if (str === '6h' || str.includes('6 hour') || str.includes('6 hr') || str === '360') return '6h';
+  if (str === '8h' || str.includes('8 hour') || str.includes('8 hr') || str === '480') return '8h';
+  if (str === '12h' || str.includes('12 hour') || str.includes('12 hr') || str === '720') return '12h';
+
+  // Deteksi hari, minggu, bulan
+  if (str === '1d' || str === 'd' || str.includes('day') || str === '1440') return '1D';
+  if (str === '1w' || str === 'w' || str.includes('week')) return '1W';
+  if (str === '1m' || str === 'm' || str.includes('month')) return '1M';
+
+  // Deteksi menit
+  if (str === '15m' || str.includes('15 min') || str === '15') return '15m';
+  if (str === '30m' || str.includes('30 min') || str === '30') return '30m';
+  if (str === '45m' || str.includes('45 min') || str === '45') return '45m';
+  if (str === '5m' || str.includes('5 min') || str === '5') return '5m';
+  if (str === '3m' || str.includes('3 min') || str === '3') return '3m';
+  if (str === '1m' || str.includes('1 min') || str === '1') return '1m';
+
+  // Fallback regex
+  var mH = str.match(/^(\d+)\s*h/);
+  if (mH) return mH[1] + 'h';
+  var mM = str.match(/^(\d+)\s*m/);
+  if (mM) return mM[1] + 'm';
+  var mD = str.match(/^(\d+)\s*d/);
+  if (mD) return mD[1] + 'D';
+
+  return val;
+}
+
+/**
+ * Helper untuk mengambil data bar HTF secara aman dan defensif.
+ * Memeriksa berbagai variasi API FX Replay (open vs openC, close vs closeC, smooth flag)
+ * sehingga tidak crash dan mengembalikan data yang valid.
+ */
+function getMtfBar(idx) {
+  if (typeof mtf === 'undefined' || !mtf) return null;
+
+  // 1. Time
+  var t = undefined;
+  if (typeof mtf.time === 'function') {
+    try { t = mtf.time(idx, false); } catch (e) {}
+    if (typeof t !== 'number' || isNaN(t)) {
+      try { t = mtf.time(idx); } catch (e) {}
+    }
+  }
+
+  // 2. High
+  var h = undefined;
+  if (typeof mtf.high === 'function') {
+    try { h = mtf.high(idx, false); } catch (e) {}
+    if (typeof h !== 'number' || isNaN(h)) {
+      try { h = mtf.high(idx); } catch (e) {}
+    }
+  }
+
+  // 3. Low
+  var l = undefined;
+  if (typeof mtf.low === 'function') {
+    try { l = mtf.low(idx, false); } catch (e) {}
+    if (typeof l !== 'number' || isNaN(l)) {
+      try { l = mtf.low(idx); } catch (e) {}
+    }
+  }
+
+  // 4. Open (coba mtf.openC, lalu fallback ke mtf.open)
+  var o = undefined;
+  if (typeof mtf.openC === 'function') {
+    try { o = mtf.openC(idx, false); } catch (e) {}
+    if (typeof o !== 'number' || isNaN(o)) {
+      try { o = mtf.openC(idx); } catch (e) {}
+    }
+  }
+  if (typeof o !== 'number' || isNaN(o)) {
+    if (typeof mtf.open === 'function') {
+      try { o = mtf.open(idx, false); } catch (e) {}
+      if (typeof o !== 'number' || isNaN(o)) {
+        try { o = mtf.open(idx); } catch (e) {}
+      }
+    }
+  }
+
+  // 5. Close (coba mtf.closeC, lalu fallback ke mtf.close)
+  var c = undefined;
+  if (typeof mtf.closeC === 'function') {
+    try { c = mtf.closeC(idx, false); } catch (e) {}
+    if (typeof c !== 'number' || isNaN(c)) {
+      try { c = mtf.closeC(idx); } catch (e) {}
+    }
+  }
+  if (typeof c !== 'number' || isNaN(c)) {
+    if (typeof mtf.close === 'function') {
+      try { c = mtf.close(idx, false); } catch (e) {}
+      if (typeof c !== 'number' || isNaN(c)) {
+        try { c = mtf.close(idx); } catch (e) {}
+      }
+    }
+  }
+
+  if (typeof t === 'number' && !isNaN(t) &&
+      typeof o === 'number' && !isNaN(o) &&
+      typeof h === 'number' && !isNaN(h) &&
+      typeof l === 'number' && !isNaN(l) &&
+      typeof c === 'number' && !isNaN(c)) {
+    return { time: t, open: o, high: h, low: l, close: c };
+  }
+  return null;
+}
+
+/**
  * Memperkirakan durasi timeframe dalam milidetik
  */
 function estimateTfDurationMs(tfStr) {
@@ -324,154 +447,167 @@ onTick = (length, _moment, _, ta) => {
   // ==========================================================================
   // 2. RENDER HTF CANDLE (MULTI-TIMEFRAME)
   // ==========================================================================
-  if (_showHtf && typeof mtf !== 'undefined' && mtf && typeof mtf.time === 'function') {
-    const candlesAmount = typeof _htfCandlesAmount === 'number' ? Math.max(1, _htfCandlesAmount) : 4;
-    const isProjected = _htfMode === 'Projected (Kanan Chart)';
-    const bullColor = _htfBullColor || color.green;
-    const bearColor = _htfBearColor || color.red;
-    const wickColor = _htfWickColor || color.black;
-    const lineWidth = typeof _htfLineWidth === 'number' ? _htfLineWidth : 1;
-    const htfDuration = estimateTfDurationMs(_htfTf);
+  if (_showHtf && typeof mtf !== 'undefined' && mtf) {
+    var candlesAmount = typeof _htfCandlesAmount === 'number' ? Math.max(1, _htfCandlesAmount) : 4;
+    var isProjected = _htfMode === 'Projected (Kanan Chart)';
+    var bullColor = _htfBullColor || (typeof color !== 'undefined' && color.green) || '#26a69a';
+    var bearColor = _htfBearColor || (typeof color !== 'undefined' && color.red) || '#ef5350';
+    var wickColor = _htfWickColor || (typeof color !== 'undefined' && color.black) || '#787b86';
+    var lineWidth = typeof _htfLineWidth === 'number' ? _htfLineWidth : 1;
+    var cleanTf = toFxrTimeframe(_htfTf);
+    var htfDuration = estimateTfDurationMs(cleanTf);
 
     // Hitung durasi 1 bar chart saat ini untuk mode Projected
-    const barDuration = (time(0) && time(1)) ? Math.abs(time(0) - time(1)) : 60000;
-    const offsetBars = typeof _htfOffset === 'number' ? _htfOffset : 5;
-    const spaceBars = typeof _htfSpace === 'number' ? _htfSpace : 2;
-    const widthBars = typeof _htfWidth === 'number' ? _htfWidth : 4;
+    var barDuration = (time(0) && time(1)) ? Math.abs(time(0) - time(1)) : 60000;
+    var offsetBars = typeof _htfOffset === 'number' ? _htfOffset : 5;
+    var spaceBars = typeof _htfSpace === 'number' ? _htfSpace : 2;
+    var widthBars = typeof _htfWidth === 'number' ? _htfWidth : 4;
 
     // Loop sejumlah candle HTF dari candle saat ini (i = 0) ke belakang
-    for (let i = 0; i < candlesAmount; i++) {
-      const htfOpen = mtf.openC(i, false);
-      const htfHigh = mtf.high(i, false);
-      const htfLow = mtf.low(i, false);
-      const htfClose = mtf.closeC(i, false);
-      const htfTime = mtf.time(i, false);
+    for (var i = 0; i < candlesAmount; i++) {
+      var bar = getMtfBar(i);
+      if (!bar) continue;
 
-      if (typeof htfTime !== 'number' || isNaN(htfTime) ||
-          typeof htfOpen !== 'number' || isNaN(htfOpen) ||
-          typeof htfClose !== 'number' || isNaN(htfClose) ||
-          typeof htfHigh !== 'number' || isNaN(htfHigh) ||
-          typeof htfLow !== 'number' || isNaN(htfLow)) {
-        continue;
+      var isBull = bar.close >= bar.open;
+      var candleColor = isBull ? bullColor : bearColor;
+      var bodyTop = Math.max(bar.open, bar.close);
+      var bodyBottom = Math.min(bar.open, bar.close);
+
+      // Antisipasi candle Doji (open == close) agar box tetap terlihat dan tidak error
+      if (bodyTop === bodyBottom) {
+        var delta = (bar.high - bar.low) > 0 ? (bar.high - bar.low) * 0.01 : 0.0001;
+        bodyTop += delta;
       }
 
-      const isBull = htfClose >= htfOpen;
-      const candleColor = isBull ? bullColor : bearColor;
-      const bodyTop = Math.max(htfOpen, htfClose);
-      const bodyBottom = Math.min(htfOpen, htfClose);
-
-      let startTime = 0;
-      let endTime = 0;
-      let wickTime = 0;
+      var startTime = 0;
+      var endTime = 0;
+      var wickTime = 0;
 
       if (isProjected) {
         // Mode Projected: Lilin HTF berjejer rapi di sebelah kanan chart
-        const candleIndex = candlesAmount - 1 - i;
-        const shiftBars = offsetBars + (widthBars + spaceBars) * candleIndex;
+        var candleIndex = candlesAmount - 1 - i;
+        var shiftBars = offsetBars + (widthBars + spaceBars) * candleIndex;
         startTime = currentBarTime + (shiftBars * barDuration);
         endTime = startTime + (widthBars * barDuration);
         wickTime = startTime + Math.floor((widthBars * barDuration) / 2);
       } else {
-        // Mode Overlay: Lilin HTF digambar persis pada waktu historis candle tersebut
-        startTime = htfTime;
-        const nextHtfTime = (i > 0) ? mtf.time(i - 1, false) : null;
-        endTime = (typeof nextHtfTime === 'number' && nextHtfTime > startTime) ? nextHtfTime : (startTime + htfDuration);
+        // Mode Overlay: Lilin HTF digambar persis pada rentang waktu historis candle tersebut
+        startTime = bar.time;
+        var nextBar = (i > 0) ? getMtfBar(i - 1) : null;
+        var nextTime = nextBar ? nextBar.time : null;
+        endTime = (typeof nextTime === 'number' && nextTime > startTime) ? nextTime : (startTime + htfDuration);
+        if (endTime <= startTime) {
+          endTime = startTime + htfDuration;
+        }
         wickTime = startTime + Math.floor((endTime - startTime) / 2);
       }
 
       // Label Candle HTF
-      let candleLabel = undefined;
+      var candleLabel = undefined;
       if (_htfShowLabel && i === 0) {
-        const tfLabelText = String(_htfTf || 'HTF').toUpperCase();
+        var tfLabelText = String(cleanTf || 'HTF').toUpperCase();
         candleLabel = tfLabelText;
       }
 
       // 1. Gambar Body Candle HTF
-      const bodyStyle = {
+      var bodyStyle = {
         color: wickColor,
         backgroundColor: candleColor,
         fillBackground: true,
         linewidth: lineWidth,
         transparency: 20,
         showLabel: Boolean(candleLabel),
+        text: candleLabel || '',
         textColor: wickColor,
         fontSize: 10,
         bold: true
       };
 
-      const bodyBoxId = rectangle(
-        startTime,
-        bodyTop,
-        endTime,
-        bodyBottom,
-        bodyStyle,
-        candleLabel
-      );
-      trackDrawing(bodyBoxId);
+      if (typeof rectangle === 'function') {
+        try {
+          var bodyBoxId = rectangle(
+            startTime,
+            bodyTop,
+            endTime,
+            bodyBottom,
+            bodyStyle,
+            candleLabel
+          );
+          trackDrawing(bodyBoxId);
+        } catch (e) {}
+      }
 
       // 2. Gambar Sumbu (Wick) Candle HTF
       if (_htfShowWick && typeof newPoint === 'function' && typeof trendLine === 'function') {
-        const lineStyle = { linecolor: wickColor, linewidth: lineWidth };
+        var lineStyle = { linecolor: wickColor, linewidth: lineWidth };
 
         // Upper Wick (High ke Body Top)
-        if (htfHigh > bodyTop) {
-          const upperWickId = trendLine(
-            newPoint(wickTime, htfHigh),
-            newPoint(wickTime, bodyTop),
-            lineStyle
-          );
-          trackDrawing(upperWickId);
+        if (bar.high > bodyTop) {
+          try {
+            var upperWickId = trendLine(
+              newPoint(wickTime, bar.high),
+              newPoint(wickTime, bodyTop),
+              lineStyle
+            );
+            trackDrawing(upperWickId);
+          } catch (e) {}
         }
 
         // Lower Wick (Body Bottom ke Low)
-        if (htfLow < bodyBottom) {
-          const lowerWickId = trendLine(
-            newPoint(wickTime, bodyBottom),
-            newPoint(wickTime, htfLow),
-            lineStyle
-          );
-          trackDrawing(lowerWickId);
+        if (bar.low < bodyBottom) {
+          try {
+            var lowerWickId = trendLine(
+              newPoint(wickTime, bodyBottom),
+              newPoint(wickTime, bar.low),
+              lineStyle
+            );
+            trackDrawing(lowerWickId);
+          } catch (e) {}
         }
       }
 
       // 3. Garis Level Tracing ke Chart LTF (H/L Line & O/C Line)
       if (typeof newPoint === 'function' && typeof trendLine === 'function') {
-        const traceColor = _htfLineColor || color.gray;
+        var traceColor = _htfLineColor || (typeof color !== 'undefined' && color.gray) || '#787b86';
 
-        if (_showHtfHlLines && i < 2) {
-          // Garis High
-          const hlLineId1 = trendLine(
-            newPoint(htfTime, htfHigh),
-            newPoint(currentBarTime, htfHigh),
-            { linecolor: traceColor, linestyle: 2, linewidth: 1 }
-          );
-          trackDrawing(hlLineId1);
+        if (_showHtfHlLines && i < 2 && currentBarTime > bar.time) {
+          try {
+            // Garis High
+            var hlLineId1 = trendLine(
+              newPoint(bar.time, bar.high),
+              newPoint(currentBarTime, bar.high),
+              { linecolor: traceColor, linestyle: 2, linewidth: 1 }
+            );
+            trackDrawing(hlLineId1);
 
-          // Garis Low
-          const hlLineId2 = trendLine(
-            newPoint(htfTime, htfLow),
-            newPoint(currentBarTime, htfLow),
-            { linecolor: traceColor, linestyle: 2, linewidth: 1 }
-          );
-          trackDrawing(hlLineId2);
+            // Garis Low
+            var hlLineId2 = trendLine(
+              newPoint(bar.time, bar.low),
+              newPoint(currentBarTime, bar.low),
+              { linecolor: traceColor, linestyle: 2, linewidth: 1 }
+            );
+            trackDrawing(hlLineId2);
+          } catch (e) {}
         }
 
-        if (_showHtfOcLines && i < 2) {
-          // Garis Open
-          const ocLineId1 = trendLine(
-            newPoint(htfTime, htfOpen),
-            newPoint(currentBarTime, htfOpen),
-            { linecolor: traceColor, linestyle: 1, linewidth: 1 }
-          );
-          trackDrawing(ocLineId1);
+        if (_showHtfOcLines && i < 2 && currentBarTime > bar.time) {
+          try {
+            // Garis Open
+            var ocLineId1 = trendLine(
+              newPoint(bar.time, bar.open),
+              newPoint(currentBarTime, bar.open),
+              { linecolor: traceColor, linestyle: 1, linewidth: 1 }
+            );
+            trackDrawing(ocLineId1);
 
-          // Garis Close
-          const ocLineId2 = trendLine(
-            newPoint(htfTime, htfClose),
-            newPoint(currentBarTime, htfClose),
-            { linecolor: traceColor, linestyle: 1, linewidth: 1 }
-          );
-          trackDrawing(ocLineId2);
+            // Garis Close
+            var ocLineId2 = trendLine(
+              newPoint(bar.time, bar.close),
+              newPoint(currentBarTime, bar.close),
+              { linecolor: traceColor, linestyle: 1, linewidth: 1 }
+            );
+            trackDrawing(ocLineId2);
+          } catch (e) {}
         }
       }
     }

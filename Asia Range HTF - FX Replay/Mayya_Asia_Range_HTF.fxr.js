@@ -3,7 +3,7 @@
  * ============================================================================
  * Indikator : Mayya • Asia Range & HTF Candle (FX Replay Edition)
  * Author    : Mayya
- * Versi     : 1.3.3
+ * Versi     : 1.3.4
  * Bahasa    : FXR Script (JavaScript / TypeScript runtime)
  * Platform  : FX Replay (FXR Code Editor v1)
  * ============================================================================
@@ -23,6 +23,8 @@ init = () => {
     'UTC+0',
     'asiaTz',
     [
+
+      
       'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5', 'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1',
       'UTC+0', 'UTC+1', 'UTC+2', 'UTC+3', 'UTC+4', 'UTC+5', 'UTC+6', 'UTC+7', 'UTC+8', 'UTC+9', 'UTC+10', 'UTC+11', 'UTC+12'
     ],
@@ -199,11 +201,15 @@ function estimateTfDurationMs(tfStr) {
 // ----------------------------------------------------------------------------
 // Main Calculation & Drawing Loop (Called on each bar/tick)
 // ----------------------------------------------------------------------------
-onTick = (length, _moment, _, ta, inputs) => {
+onTick = (length, _moment, _, ta) => {
   if (length < 2) return;
 
   // Bersihkan drawing lama setiap ada pembaruan tick
   clearOldDrawings();
+
+  // inputs di FX Replay adalah injected scope variable (bukan parameter).
+  // Guard ini memastikan kita tidak crash jika runtime belum menginjeksikannya.
+  if (typeof inputs === 'undefined') return;
 
   const currentBarTime = time(0);
   if (typeof currentBarTime !== 'number' || isNaN(currentBarTime)) return;

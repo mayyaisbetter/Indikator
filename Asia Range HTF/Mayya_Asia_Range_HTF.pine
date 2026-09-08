@@ -54,94 +54,94 @@ color_transparent                   = #ffffff00
 
 // # General ----------------------------------------------------------------- #
 
-    general_font                                = input.string("Monospace", "Text             ", options = ["Default", "Monospace"], inline = "1.0", group = "General")
-    general_text                                = input.string("Tiny", "", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"], inline = "1.0", group = "General")
-    
-    // --- Custom Watermark Settings ---
-    g_wm                                        = "Custom Watermark Settings"
-    wm_show                                     = input.bool(true, "Tampilkan Watermark", group = g_wm)
-    wm_title                                    = input.string("Mayya Trading", "Title Watermark", group = g_wm)
-    wm_subtitle                                 = input.string("HTF Candle & Asia Range", "Subtitle Watermark", group = g_wm)
-    wm_position                                 = input.string("Bottom Right", "Posisi Watermark", options = ["Top Left", "Top Center", "Top Right", "Middle Left", "Middle Center", "Middle Right", "Bottom Left", "Bottom Center", "Bottom Right"], group = g_wm, tooltip = "Atur penempatan watermark: Atas, Bawah, Kiri, Kanan, atau Tengah")
-    wm_font                                     = input.string("Default", "Gaya Font", options = ["Default", "Monospace"], group = g_wm)
-    wm_bold                                     = input.bool(true, "Teks Tebal (Bold)", group = g_wm, tooltip = "Mengubah karakter teks menjadi tebal (Bold Mathematical Unicode)")
-    wm_title_size                               = input.string("Normal", "Ukuran Title", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
-    wm_sub_size                                 = input.string("Small", "Ukuran Subtitle", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
-    wm_title_color                              = input.color(#00E676, "Warna Title", inline = "wm_col", group = g_wm)
-    wm_sub_color                                = input.color(color.gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
-    wm_opacity                                  = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
-    wm_border_width                             = input.int(0, "Ketebalan Border Box", minval = 0, maxval = 5, group = g_wm, tooltip = "0 = Tanpa border, 1-5 = Ketebalan garis pembatas box")
-    wm_border_color                             = input.color(color.new(color.gray, 70), "Warna Border Box", group = g_wm)
-    wm_bg_color                                 = input.color(color.new(color.black, 100), "Warna Background Box", group = g_wm)
-    
-    htf_sweeps_tf_1_show                        = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
-    htf_sweeps_tf_1_tf                          = input.timeframe("15", "", inline = "1.0", group = "Timeframes")
-    htf_sweeps_tf_1_number                      = input.int(10, "", inline = "1.0", group = "Timeframes", minval = 1, maxval = 60)
-    htf_sweeps_tf_1_map                         = input.bool(false, "M", inline = "1.0", group = "Timeframes", tooltip = "Map this HTF to LTF")
-    htf_sweeps_tf_2_show                        = input.bool(true, "HTF II    ", inline = "2.0", group = "Timeframes")
-    htf_sweeps_tf_2_tf                          = input.timeframe("60", "", inline = "2.0", group = "Timeframes")
-    htf_sweeps_tf_2_number                      = input.int(8, "", inline = "2.0", group = "Timeframes", minval = 1, maxval = 60)
-    htf_sweeps_tf_2_map                         = input.bool(true, "M", inline = "2.0", group = "Timeframes")
-    htf_sweeps_tf_3_show                        = input.bool(true, "HTF III   ", inline = "3.0", group = "Timeframes")
-    htf_sweeps_tf_3_tf                          = input.timeframe("240", "", inline = "3.0", group = "Timeframes")
-    htf_sweeps_tf_3_number                      = input.int(6, "", inline = "3.0", group = "Timeframes", minval = 1, maxval = 60)
-    htf_sweeps_tf_3_map                         = input.bool(false, "M", inline = "3.0", group = "Timeframes")
-    htf_sweeps_tf_4_show                        = input.bool(true, "HTF IV   ", inline = "4.0", group = "Timeframes")
-    htf_sweeps_tf_4_tf                          = input.timeframe("1D", "", inline = "4.0", group = "Timeframes")
-    htf_sweeps_tf_4_number                      = input.int(4, "", inline = "4.0", group = "Timeframes", minval = 1, maxval = 60)
-    htf_sweeps_tf_4_map                         = input.bool(false, "M", inline = "4.0", group = "Timeframes")
-    htf_sweeps_tf_5_show                        = input.bool(true, "HTF V    ", inline = "5.0", group = "Timeframes")
-    htf_sweeps_tf_5_tf                          = input.timeframe("1W", "", inline = "5.0", group = "Timeframes")
-    htf_sweeps_tf_5_number                      = input.int(2, "", inline = "5.0", group = "Timeframes", minval = 1, maxval = 60)
-    htf_sweeps_tf_5_map                         = input.bool(false, "M", inline = "5.0", group = "Timeframes")
-    htf_sweeps_tf_6_show                        = input.bool(false, "HTF VI   ", inline = "6.0", group = "Timeframes")
-    htf_sweeps_tf_6_tf                          = input.timeframe("1M", "", inline = "6.0", group = "Timeframes")
-    htf_sweeps_tf_6_number                      = input.int(1, "", inline = "6.0", group = "Timeframes", minval = 1, maxval = 60)
-    htf_sweeps_tf_6_map                         = input.bool(false, "M", inline = "6.0", group = "Timeframes")
-    
-    htf_sweeps_bull_color                       = input.color(colors_green, "Coloring     ", inline = "1.0", group = "HTF")
-    htf_sweeps_bear_color                       = input.color(colors_black, "", inline = "1.0", group = "HTF")
-    htf_sweeps_wick_border_color                = input.color(colors_black, "", inline = "1.0", group = "HTF")
-    htf_sweeps_offset                           = input.int(10, "Offset            ", minval = 1, inline = "2.0", group = "HTF", tooltip = "The distance from the current chart candles.")
-    htf_sweeps_space                            = input.int(1, "Space            ", minval = 1, inline = "3.0", maxval = 4, group = "HTF", tooltip = "Space between candles")
-    htf_sweeps_candle_width                     = input.string("Small", "Size               ", inline = "4.0", group = "HTF", options = ["Tiny", "Small", "Medium", "Large", "Huge"], tooltip = "Candle size")
-    htf_sweeps_label_show                       = input.bool(true, "Labels   ", inline = "5.0", group = "HTF")
-    htf_sweeps_label_size                       = input.string("Normal", "", inline = "5.0", group = "HTF", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"])
-    htf_sweeps_label_position                   = input.string("Top", "Posisi Label", inline = "5.1", group = "HTF", options = ["Both", "Top", "Bottom"], tooltip = "Posisi label/title: Atas (Top), Bawah (Bottom), atau Keduanya (Both)")
-    htf_sweeps_label_color                      = input.color(colors_black, "Warna Label", inline = "5.1", group = "HTF")
-    htf_sweeps_countdown_show                   = input.bool(true, "Waktu Mundur Close Candle", group = "HTF", tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
-    
-    htf_sweeps_ltf_trace_h_l_show               = input.bool(true, "H/L Line ", inline = "1.0", group="LTF")
-    htf_sweeps_ltf_trace_h_l_style              = input.string('····', '', options = ['⎯⎯⎯', '----', '····'], inline = "1.0", group="LTF")
-    htf_sweeps_ltf_trace_h_l_width              = input.int(1, '', inline = "1.0", minval = 0, maxval = 4, group="LTF")
-    htf_sweeps_ltf_trace_h_l_color              = input.color(color.new(colors_gray, 50), "", inline = "1.0", group="LTF")
-    htf_sweeps_ltf_trace_o_c_line_show          = input.bool(true, "O/C Line ", inline = "2.0", group = "LTF")
-    htf_sweeps_ltf_trace_o_c_line_style         = input.string('⎯⎯⎯', "", options = ['⎯⎯⎯', '----', '····'], inline = "2.0", group = "LTF")
-    htf_sweeps_ltf_trace_o_c_line_width         = input.int(1, '', inline = "2.0", minval = 0, maxval = 4, group = "LTF")
-    htf_sweeps_ltf_trace_o_c_line_color         = input.color(color.new(colors_gray, 50), "", inline = "2.0", group = "LTF")
-    
-    htf_sweeps_sweep_show                       = input.bool(true, "Sweep      ", inline = "1.0", group = "Sweep")
-    htf_sweeps_sweep_ltf_show                   = input.bool(true, "LTF    ", inline = "1.0", group = "Sweep")
-    htf_sweeps_sweep_htf_show                   = input.bool(true, "HTF", inline = "1.0", group = "Sweep", tooltip = "Show sweeps.\n[LTF]  - Show sweeps on LTF.\n[HTF] - Show sweeps on HTF.")
-    htf_sweeps_sweep_line_style                 = input.string('⎯⎯⎯', "                     ", options = ['⎯⎯⎯', '----', '····'], inline = "1.1", group = "Sweep")
-    htf_sweeps_sweep_line_width                 = input.int(1, '', inline = "1.1", group = "Sweep")
-    htf_sweeps_sweep_line_color                 = input.color(colors_black, "", inline = "1.1", group = "Sweep")
-    htf_sweeps_i_sweep_show                     = input.bool(false, "I-sweep    ", inline = "2.0", group = "Sweep")
-    htf_sweeps_i_sweep_ltf_show                 = input.bool(true, "LTF    ", inline = "2.0", group = "Sweep")
-    htf_sweeps_i_sweep_htf_show                 = input.bool(true, "HTF", inline = "2.0", group = "Sweep", tooltip = "Show invalidated sweeps.\n[LTF]  - Show invalidated sweeps on LTF.\n[HTF] - Show invalidated sweeps on HTF.")
-    htf_sweeps_i_sweep_line_style               = input.string('----', "                     ", options = ['⎯⎯⎯', '----', '····'], inline = "2.1", group = "Sweep")
-    htf_sweeps_i_sweep_line_width               = input.int(1, '', inline = "2.1", group = "Sweep")
-    htf_sweeps_i_sweep_line_color               = input.color(colors_gray, "", inline = "2.1", group = "Sweep")
-    
-    // htf_sweeps_dashboard_info_show              = input.bool(true, "Panel    ", inline = "1.0", group = "Dashboard")
-    // htf_sweeps_dashboard_info_position          = input.string("Bottom Center", "", options = ["Bottom Center", "Bottom Right", "Middle Center", "Middle Left", "Middle Right", "Top Center", "Top Left", "Top Right"], inline = "1.0", group = "Dashboard", tooltip = "The dashboard will display only the HTF that is mapped to LTF")
-    
-    htf_sweeps_alerts_sweep_formation           = input.bool(false, "Sweep Formation", inline = "1.0", group = "Alerts")
-    htf_sweeps_alerts_sweep_invalidation        = input.bool(false, "Sweep Invalidation", inline = "2.0", group = "Alerts")
+general_font                                = input.string("Monospace", "Text             ", options = ["Default", "Monospace"], inline = "1.0", group = "General")
+general_text                                = input.string("Tiny", "", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"], inline = "1.0", group = "General")
+
+// --- Custom Watermark Settings ---
+g_wm                                        = "Custom Watermark Settings"
+wm_show                                     = input.bool(true, "Tampilkan Watermark", group = g_wm)
+wm_title                                    = input.string("Mayya Trading", "Title Watermark", group = g_wm)
+wm_subtitle                                 = input.string("HTF Candle & Asia Range", "Subtitle Watermark", group = g_wm)
+wm_position                                 = input.string("Bottom Right", "Posisi Watermark", options = ["Top Left", "Top Center", "Top Right", "Middle Left", "Middle Center", "Middle Right", "Bottom Left", "Bottom Center", "Bottom Right"], group = g_wm, tooltip = "Atur penempatan watermark: Atas, Bawah, Kiri, Kanan, atau Tengah")
+wm_font                                     = input.string("Default", "Gaya Font", options = ["Default", "Monospace"], group = g_wm)
+wm_bold                                     = input.bool(true, "Teks Tebal (Bold)", group = g_wm, tooltip = "Mengubah karakter teks menjadi tebal (Bold Mathematical Unicode)")
+wm_title_size                               = input.string("Normal", "Ukuran Title", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
+wm_sub_size                                 = input.string("Small", "Ukuran Subtitle", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
+wm_title_color                              = input.color(#00E676, "Warna Title", inline = "wm_col", group = g_wm)
+wm_sub_color                                = input.color(color.gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
+wm_opacity                                  = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
+wm_border_width                             = input.int(0, "Ketebalan Border Box", minval = 0, maxval = 5, group = g_wm, tooltip = "0 = Tanpa border, 1-5 = Ketebalan garis pembatas box")
+wm_border_color                             = input.color(color.new(color.gray, 70), "Warna Border Box", group = g_wm)
+wm_bg_color                                 = input.color(color.new(color.black, 100), "Warna Background Box", group = g_wm)
+
+htf_sweeps_tf_1_show                        = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
+htf_sweeps_tf_1_tf                          = input.timeframe("15", "", inline = "1.0", group = "Timeframes")
+htf_sweeps_tf_1_number                      = input.int(10, "", inline = "1.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_1_map                         = input.bool(false, "M", inline = "1.0", group = "Timeframes", tooltip = "Map this HTF to LTF")
+htf_sweeps_tf_2_show                        = input.bool(true, "HTF II    ", inline = "2.0", group = "Timeframes")
+htf_sweeps_tf_2_tf                          = input.timeframe("60", "", inline = "2.0", group = "Timeframes")
+htf_sweeps_tf_2_number                      = input.int(8, "", inline = "2.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_2_map                         = input.bool(true, "M", inline = "2.0", group = "Timeframes")
+htf_sweeps_tf_3_show                        = input.bool(true, "HTF III   ", inline = "3.0", group = "Timeframes")
+htf_sweeps_tf_3_tf                          = input.timeframe("240", "", inline = "3.0", group = "Timeframes")
+htf_sweeps_tf_3_number                      = input.int(6, "", inline = "3.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_3_map                         = input.bool(false, "M", inline = "3.0", group = "Timeframes")
+htf_sweeps_tf_4_show                        = input.bool(true, "HTF IV   ", inline = "4.0", group = "Timeframes")
+htf_sweeps_tf_4_tf                          = input.timeframe("1D", "", inline = "4.0", group = "Timeframes")
+htf_sweeps_tf_4_number                      = input.int(4, "", inline = "4.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_4_map                         = input.bool(false, "M", inline = "4.0", group = "Timeframes")
+htf_sweeps_tf_5_show                        = input.bool(true, "HTF V    ", inline = "5.0", group = "Timeframes")
+htf_sweeps_tf_5_tf                          = input.timeframe("1W", "", inline = "5.0", group = "Timeframes")
+htf_sweeps_tf_5_number                      = input.int(2, "", inline = "5.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_5_map                         = input.bool(false, "M", inline = "5.0", group = "Timeframes")
+htf_sweeps_tf_6_show                        = input.bool(false, "HTF VI   ", inline = "6.0", group = "Timeframes")
+htf_sweeps_tf_6_tf                          = input.timeframe("1M", "", inline = "6.0", group = "Timeframes")
+htf_sweeps_tf_6_number                      = input.int(1, "", inline = "6.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_6_map                         = input.bool(false, "M", inline = "6.0", group = "Timeframes")
+
+htf_sweeps_bull_color                       = input.color(colors_green, "Coloring     ", inline = "1.0", group = "HTF")
+htf_sweeps_bear_color                       = input.color(colors_black, "", inline = "1.0", group = "HTF")
+htf_sweeps_wick_border_color                = input.color(colors_black, "", inline = "1.0", group = "HTF")
+htf_sweeps_offset                           = input.int(10, "Offset            ", minval = 1, inline = "2.0", group = "HTF", tooltip = "The distance from the current chart candles.")
+htf_sweeps_space                            = input.int(1, "Space            ", minval = 1, inline = "3.0", maxval = 4, group = "HTF", tooltip = "Space between candles")
+htf_sweeps_candle_width                     = input.string("Small", "Size               ", inline = "4.0", group = "HTF", options = ["Tiny", "Small", "Medium", "Large", "Huge"], tooltip = "Candle size")
+htf_sweeps_label_show                       = input.bool(true, "Labels   ", inline = "5.0", group = "HTF")
+htf_sweeps_label_size                       = input.string("Normal", "", inline = "5.0", group = "HTF", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"])
+htf_sweeps_label_position                   = input.string("Top", "Posisi Label", inline = "5.1", group = "HTF", options = ["Both", "Top", "Bottom"], tooltip = "Posisi label/title: Atas (Top), Bawah (Bottom), atau Keduanya (Both)")
+htf_sweeps_label_color                      = input.color(colors_black, "Warna Label", inline = "5.1", group = "HTF")
+htf_sweeps_countdown_show                   = input.bool(true, "Waktu Mundur Close Candle", group = "HTF", tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
+
+htf_sweeps_ltf_trace_h_l_show               = input.bool(true, "H/L Line ", inline = "1.0", group="LTF")
+htf_sweeps_ltf_trace_h_l_style              = input.string('····', '', options = ['⎯⎯⎯', '----', '····'], inline = "1.0", group="LTF")
+htf_sweeps_ltf_trace_h_l_width              = input.int(1, '', inline = "1.0", minval = 0, maxval = 4, group="LTF")
+htf_sweeps_ltf_trace_h_l_color              = input.color(color.new(colors_gray, 50), "", inline = "1.0", group="LTF")
+htf_sweeps_ltf_trace_o_c_line_show          = input.bool(true, "O/C Line ", inline = "2.0", group = "LTF")
+htf_sweeps_ltf_trace_o_c_line_style         = input.string('⎯⎯⎯', "", options = ['⎯⎯⎯', '----', '····'], inline = "2.0", group = "LTF")
+htf_sweeps_ltf_trace_o_c_line_width         = input.int(1, '', inline = "2.0", minval = 0, maxval = 4, group = "LTF")
+htf_sweeps_ltf_trace_o_c_line_color         = input.color(color.new(colors_gray, 50), "", inline = "2.0", group = "LTF")
+
+htf_sweeps_sweep_show                       = input.bool(true, "Sweep      ", inline = "1.0", group = "Sweep")
+htf_sweeps_sweep_ltf_show                   = input.bool(true, "LTF    ", inline = "1.0", group = "Sweep")
+htf_sweeps_sweep_htf_show                   = input.bool(true, "HTF", inline = "1.0", group = "Sweep", tooltip = "Show sweeps.\n[LTF]  - Show sweeps on LTF.\n[HTF] - Show sweeps on HTF.")
+htf_sweeps_sweep_line_style                 = input.string('⎯⎯⎯', "                     ", options = ['⎯⎯⎯', '----', '····'], inline = "1.1", group = "Sweep")
+htf_sweeps_sweep_line_width                 = input.int(1, '', inline = "1.1", group = "Sweep")
+htf_sweeps_sweep_line_color                 = input.color(colors_black, "", inline = "1.1", group = "Sweep")
+htf_sweeps_i_sweep_show                     = input.bool(false, "I-sweep    ", inline = "2.0", group = "Sweep")
+htf_sweeps_i_sweep_ltf_show                 = input.bool(true, "LTF    ", inline = "2.0", group = "Sweep")
+htf_sweeps_i_sweep_htf_show                 = input.bool(true, "HTF", inline = "2.0", group = "Sweep", tooltip = "Show invalidated sweeps.\n[LTF]  - Show invalidated sweeps on LTF.\n[HTF] - Show invalidated sweeps on HTF.")
+htf_sweeps_i_sweep_line_style               = input.string('----', "                     ", options = ['⎯⎯⎯', '----', '····'], inline = "2.1", group = "Sweep")
+htf_sweeps_i_sweep_line_width               = input.int(1, '', inline = "2.1", group = "Sweep")
+htf_sweeps_i_sweep_line_color               = input.color(colors_gray, "", inline = "2.1", group = "Sweep")
+
+// htf_sweeps_dashboard_info_show              = input.bool(true, "Panel    ", inline = "1.0", group = "Dashboard")
+// htf_sweeps_dashboard_info_position          = input.string("Bottom Center", "", options = ["Bottom Center", "Bottom Right", "Middle Center", "Middle Left", "Middle Right", "Top Center", "Top Left", "Top Right"], inline = "1.0", group = "Dashboard", tooltip = "The dashboard will display only the HTF that is mapped to LTF")
+
+htf_sweeps_alerts_sweep_formation           = input.bool(false, "Sweep Formation", inline = "1.0", group = "Alerts")
+htf_sweeps_alerts_sweep_invalidation        = input.bool(false, "Sweep Invalidation", inline = "2.0", group = "Alerts")
 
 
 
-    //#endregion
+//#endregion
 
 // # ========================================================================= #
 // # |   End   |
@@ -1319,34 +1319,6 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
     var color_gray    = ac.tradingview('gray')
     var color_orange  = ac.tradingview('orange')
     var target_line_width = 1
-            if data.is_extended
-                line.set_extend(my_line, extend.right)
-
-        else if  bool(session)
-            line.set_y1(my_line, y)
-            line.set_y2(my_line, y)
-
-            f_set_line_x2(my_line, _x2)
-        else if _is_ended
-            f_set_line_x2(my_line, _x2-session_end_offset)
-    data
-
-// Drawing Opening range
-f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color, _max) =>
-    var int start_time  = na
-    var label my_label1 = na
-    var label my_label2 = na
-    var bool is_opened  = false
-    var float R1 = na, var float R2 = na
-    var float S1 = na, var float S2 = na
-
-    var is_reached_R1 = false
-    var is_reached_R2 = false
-    var is_reached_S1 = false
-    var is_reached_S2 = false
-    var color_gray    = ac.tradingview('gray')
-    var color_orange  = ac.tradingview('orange')
-    var target_line_width = 1
 
     session = data.session()
 
@@ -1480,7 +1452,7 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
     // ------------------------
     // Drawing candle
     // ------------------------
-    f_render_candle (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _open, _x1, _x2) =>
+f_render_candle (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _open, _x1, _x2) =>
     var box body = na
     var line wick1 = na
     var line wick2 = na
@@ -1531,10 +1503,10 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
 
     data
 
-    // ------------------------
-    // Rendering limit message
-    // ------------------------
-    f_render_limitmessage (_show, Session data, _is_started, _is_ended, _x, _y, _rightbars) =>
+// ------------------------
+// Rendering limit message
+// ------------------------
+f_render_limitmessage (_show, Session data, _is_started, _is_ended, _x, _y, _rightbars) =>
     var label my_note = na
     session = data.session()
 
@@ -1554,9 +1526,9 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
             label.delete(my_note)
     data
 
-    // Rendering session
-    //
-    f_render_sessionrange (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2, _is_vertical = false) =>
+// Rendering session
+//
+f_render_sessionrange (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2, _is_vertical = false) =>
     var line above_line = na
     var line below_line = na
     session = data.session()
@@ -1609,14 +1581,14 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
                 line.set_x2(above_line, _x2-session_end_offset)
                 line.set_x2(below_line, _x2-session_end_offset)
 
-            data.add(_top[1] - _bottom[1], i_info_period)
+            data.add(_top[1] - _bottom[1], i_history_period)
 
-        data
+    data
 
-    // ------------------------
-    // Rendering session box
-    // ------------------------
-    f_render_session (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2) =>
+// ------------------------
+// Rendering session box
+// ------------------------
+f_render_session (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2) =>
     var box my_box   = na
     session = data.session()
 
@@ -1637,7 +1609,7 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
 
         else if _is_ended
             box.set_right(my_box, _x2-session_end_offset)
-            data.add(_top[1] - _bottom[1], i_info_period)
+            data.add(_top[1] - _bottom[1], i_history_period)
 
     data
 
@@ -1698,10 +1670,10 @@ f_render_dots (_show, Session data, _is_started, _is_ended, _color, _top, _botto
             _open := na
     true
 
-    // ------------------------
-    // Drawing market
-    // ------------------------
-    f_render_main (_show, Session data, _is_started, _is_ended, _color, _top, _bottom) =>
+// ------------------------
+// Drawing market
+// ------------------------
+f_render_main (_show, Session data, _is_started, _is_ended, _color, _top, _bottom) =>
     var x1 = 0
     var x2 = 0
     x2_offset = 1

@@ -1259,10 +1259,8 @@ i_sess_box_style        = input.string('Box', '', options=['Box', 'Background', 
 i_sess_border_style     = f_border_style(input.string(option_border_style2, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g4, inline='box_style'))
 i_sess_border_width     = input.int(1, '', minval=0, group=g4, inline='box_style')
 i_sess_box_background   = input.bool(true, 'BG color', group=g4, inline='box_style_options')
-bool i_sess_box_dots    = false
 int session_end_offset  = 0
 i_sess_bgopacity        = i_sess_box_background ? 94 : 100
-i_sess_bgopacity2       = math.min(i_sess_bgopacity - 4, 100)
 i_sess_border_width    := i_sess_box_style == 'Background' ? 0 : i_sess_border_width
 
 // Labels
@@ -1271,23 +1269,6 @@ i_label_size            = str.lower(input.string('Small', '', options=['Auto', '
 i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bottom'], inline='label_pos', group=g6))
 i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g6))
 i_label_position        = f_get_label_position(i_label_position_y, i_label_position_s)
-
-// Internal definitions for removed features to ensure clean compatibility
-bool i_show_candle           = false
-bool i_show_candle_wick      = false
-int i_o_minutes              = 15
-int i_o_transp               = 50
-string i_o_size              = size.small
-string i_o_color             = option_candle_color2
-string i_o_label_1           = 'price'
-string i_o_label_2           = 'price'
-string i_o_label_color       = 'white'
-bool i_o_nowonly             = false
-bool i_o_breakout_icon       = false
-bool i_o_target              = false
-bool i_o_target_boxes        = false
-int i_f_linewidth            = 1
-i_f_linestyle                = line.style_solid
 
 // Alerts
 i_alert1_show           = input.bool(false, 'Alerts - Sessions start/end', group=g10)
@@ -1316,230 +1297,6 @@ f_render_label (_show, Session data, _is_started, _color, _top, _bottom) =>
         else if bool(session)
             label.set_y(my_label, v_position_y)
             label.set_text(my_label, lbl_text)
-
-    data
-
-// Drawing Fibonacci levels
-f_render_fibonacci (_show, data, _is_started, _is_ended, _x1, _x2, _color, _top, _bottom, _level, _width, _style) =>
-    var line my_line = na
-    session = data.session()
-
-    if _show
-        y = (_top - _bottom) * _level + _bottom
-
-        if _is_started
-            my_line := line.new(_x1, y, _x2, y, width=_width, color=color.new(_color, 30), style=_style)
-            array.push(data.fib, my_line)
-
-            if data.is_extended
-                line.set_extend(my_line, extend.right)
-
-        else if  bool(session)
-            line.set_y1(my_line, y)
-            line.set_y2(my_line, y)
-
-            f_set_line_x2(my_line, _x2)
-        else if _is_ended
-            f_set_line_x2(my_line, _x2-session_end_offset)
-    data
-
-// Drawing Opening range
-f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color, _max) =>
-    var int start_time  = na
-    var label my_label1 = na
-    var label my_label2 = na
-    var bool is_opened  = false
-    var float R1 = na, var float R2 = na
-    var float S1 = na, var float S2 = na
-
-    var is_reached_R1 = false
-    var is_reached_R2 = false
-    var is_reached_S1 = false
-    var is_reached_S2 = false
-    var color_gray    = ac.tradingview('gray')
-    var color_orange  = ac.tradingview('orange')
-    var target_line_width = 1
-
-    session = data.session()
-
-    top                     = ta.highest(high, _max)
-    btm                     = ta.lowest(low, _max)
-
-    var float saved_top     = na
-
-    if _show
-        if _is_started
-            util.clear_boxes(data.opr_boxes, data.is_extended ? 0 : math.max(0, (i_history_period - 1) * 2))
-            util.clear_lines(data.opr_lines, data.is_extended ? 0 : math.max(0, (i_history_period - 1) * 2))
-            util.clear_labels(data.opr_labels, data.is_extended ? 0 : math.max(0, (i_history_period - 1) * 2))
-
-            start_time      := time
-            is_opened       := true
-
-        else if bool(session)
-            time_op = start_time + (i_o_minutes * 60 * 1000)
-            time_op_delay = time_op - f_get_time_by_bar(1)
-
-            if time <= time_op and time > time_op_delay
-                top_color       = i_o_color == option_candle_color2 ? ac.tradingview('blue') : _color
-                btm_color       = i_o_color == option_candle_color2 ? ac.tradingview('red')  : _color
-                top_text_color  = color.from_gradient(85, 0, 100, top_color, ac.panda(i_o_label_color))
-                bot_text_color  = color.from_gradient(85, 0, 100, btm_color, ac.panda(i_o_label_color))
-                extend          = data.is_extended ? extend.right : extend.none
-
-                mdl             = math.avg(top, btm)
-                avg1            = (data.price_range_avg * 0.786) * 0.5
-                avg2            = (data.price_range_avg * 1.272) * 0.5
-
-                saved_top := top
-
-                R1 := math.avg(btm, mdl) + avg1
-                R2 := math.avg(btm, mdl) + avg2
-                S1 := math.avg(top, mdl) - avg1
-                S2 := math.avg(top, mdl) - avg2
-
-                array.push(data.opr_boxes, box.new (_x1, top, bar_index, btm, border_width=0, bgcolor=color.new(ac.tradingview('yellow'), i_o_transp)))
-                array.push(data.opr_lines, line.new(_x1, top, _x2, top, style=line.style_dotted, color=top_color, extend=extend))
-                array.push(data.opr_lines, line.new(_x1, btm, _x2, btm, style=line.style_dotted, color=btm_color, extend=extend))
-
-                array.push(data.opr_lines, line.new(_x1, R2 , _x2, R2 , style=line.style_solid, color=i_o_target ? color.new(top_color, 40) : TRANSPARENT, width=target_line_width, extend=extend))
-                array.push(data.opr_lines, line.new(_x1, S2 , _x2, S2 , style=line.style_solid, color=i_o_target ? color.new(btm_color, 40) : TRANSPARENT, width=target_line_width, extend=extend))
-                array.push(data.opr_lines, line.new(_x1, R1 , _x2, R1 , style=line.style_solid, color=i_o_target ? color.new(top_color, 40) : TRANSPARENT, width=target_line_width, extend=extend))
-                array.push(data.opr_lines, line.new(_x1, S1 , _x2, S1 , style=line.style_solid, color=i_o_target ? color.new(btm_color, 40) : TRANSPARENT, width=target_line_width, extend=extend))
-                array.push(data.opr_boxes, box.new (_x1, R1, _x1+1, R2, border_width=0, bgcolor=i_o_target_boxes ? color.new(top_color, i_o_transp) : TRANSPARENT))
-                array.push(data.opr_boxes, box.new (_x1, S1, _x1+1, S2, border_width=0, bgcolor=i_o_target_boxes ? color.new(btm_color, i_o_transp) : TRANSPARENT))
-
-                if i_o_target
-                    array.unshift(data.opr_linefills, linefill.new(array.get(data.opr_lines, array.size(data.opr_lines)-1), array.get(data.opr_lines, array.size(data.opr_lines)-3), color.new(btm_color, 96))) // S
-                    array.unshift(data.opr_linefills, linefill.new(array.get(data.opr_lines, array.size(data.opr_lines)-2), array.get(data.opr_lines, array.size(data.opr_lines)-4), color.new(top_color, 96))) // R
-
-                t1 = i_o_label_1 == 'price' ? str.tostring(top, format.mintick) : i_o_label_1
-                t2 = i_o_label_2 == 'price' ? str.tostring(btm, format.mintick) : i_o_label_2
-
-                my_label1 := label.new(_x1-1, top, format_text_style(t1, general_font), yloc=yloc.price, style=label.style_label_right, color=top_color, textcolor=top_text_color, size=i_o_size, tooltip=str.tostring(top, format.mintick), text_font_family=font_style(general_font))
-                my_label2 := label.new(_x1-1, btm, format_text_style(t2, general_font), yloc=yloc.price, style=label.style_label_right, color=btm_color, textcolor=bot_text_color, size=i_o_size, tooltip=str.tostring(btm, format.mintick), text_font_family=font_style(general_font))
-
-                array.push(data.opr_labels, my_label1)
-                array.push(data.opr_labels, my_label2)
-
-                alert('Opening range is fixed.', alert.freq_once_per_bar)
-            else if is_opened
-                if ta.crossover(high, R1) and (not is_reached_R1)
-                    is_reached_R1 := true
-
-                    if i_o_breakout_icon
-                        label.new(bar_index, high, '×', yloc=yloc.price, style=label.style_label_center, color=TRANSPARENT, textcolor=ac.tradingview('blue'), size=size.large)
-
-                if ta.crossover(high, R2) and (not is_reached_R2)
-                    is_reached_R2 := true
-
-                    if i_o_breakout_icon
-                        label.new(bar_index, high, '×', yloc=yloc.price, style=label.style_label_center, color=TRANSPARENT, textcolor=ac.tradingview('blue'), size=size.large)
-
-                if ta.crossunder(low, S1) and (not is_reached_S1)
-                    is_reached_S1 := true
-
-                    if i_o_breakout_icon
-                        label.new(bar_index, low, '×', yloc=yloc.price, style=label.style_label_center, color=TRANSPARENT, textcolor=ac.tradingview('red'), size=size.large)
-
-                if ta.crossunder(low, S2) and (not is_reached_S2)
-                    is_reached_S2 := true
-
-                    if i_o_breakout_icon
-                        label.new(bar_index, low, '×', yloc=yloc.price, style=label.style_label_center, color=TRANSPARENT, textcolor=ac.tradingview('red'), size=size.large)
-                true
-
-        else if _is_ended
-
-            if i_o_nowonly
-                util.clear_lines(data.opr_lines, -1)
-                util.clear_labels(data.opr_labels, -1)
-                util.clear_boxes(data.opr_boxes, -1)
-
-            else if array.size(data.opr_lines) > 0
-                for i = 0 to 5
-                    the_line = array.get(data.opr_lines, array.size(data.opr_lines) - (i + 1))
-                    line.set_x2(the_line, _x2-session_end_offset)
-
-                for i = 0 to 1
-                    the_label = array.get(data.opr_labels, array.size(data.opr_labels) - (i + 1))
-                    label.set_text(the_label, '')
-                    label.set_style(the_label, label.style_label_center)
-                    label.set_textcolor(the_label, i_o_color == option_candle_color2 ? label.get_y(the_label) >= saved_top ? ac.tradingview('blue') : ac.tradingview('red') : _color)
-                    label.set_color(the_label, TRANSPARENT)
-                    label.set_size(the_label, size.tiny)
-                    label.set_x(the_label,_x1)
-
-            data.op.total_count := data.op.total_count + 1
-            data.op.reached_count := (is_reached_R1 or is_reached_R2 or is_reached_S1 or is_reached_S2) ? data.op.reached_count + 1 : data.op.reached_count
-            data.op.reached_R1_count := is_reached_R1 ? data.op.reached_R1_count + session_end_offset : data.op.reached_R1_count
-            data.op.reached_R2_count := is_reached_R2 ? data.op.reached_R2_count + session_end_offset : data.op.reached_R2_count
-            data.op.reached_S1_count := is_reached_S1 ? data.op.reached_S1_count + session_end_offset : data.op.reached_S1_count
-            data.op.reached_S2_count := is_reached_S2 ? data.op.reached_S2_count + session_end_offset : data.op.reached_S2_count
-
-            // Reset
-            R1 := na, R2 := na, S1 := na, S2 := na
-            is_reached_R1 := false
-            is_reached_R2 := false
-            is_reached_S1 := false
-            is_reached_S2 := false
-            is_opened := false
-            saved_top := na
-
-        is_opened
-    data
-
-    // ------------------------
-    // Drawing candle
-    // ------------------------
-f_render_candle (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _open, _x1, _x2) =>
-    var box body = na
-    var line wick1 = na
-    var line wick2 = na
-    session = data.session()
-
-    border_width = i_candle_border_width
-    cx = math.round(math.avg(_x2, _x1)) - math.round(border_width / 2)
-
-    body_color = i_candle_color == option_candle_color2 ? close > _open ? i_candle_color_g : i_candle_color_r : _color
-    body_color := color.new(body_color, 30)
-
-    if _show
-        if _is_started
-            body    := box.new(_x1, _top, _x2, _bottom, body_color, border_width, line.style_solid, bgcolor=color.new(color.black, 100))
-            wick1   := i_show_candle_wick ? line.new(cx, _top, cx, _top, color=body_color, width=border_width, style=line.style_solid) : na
-            wick2   := i_show_candle_wick ? line.new(cx, _bottom, cx, _bottom, color=body_color, width=border_width, style=line.style_solid) : na
-
-            array.push(data.candle.body, body)
-            array.push(data.candle.wick, wick1)
-            array.push(data.candle.wick, wick2)
-
-            util.clear_boxes(data.candle.body, i_history_period)
-            util.clear_lines(data.candle.wick, i_history_period * 2)
-
-        else if  bool(session)
-            top    = math.max(_open, close)
-            bottom = math.min(_open, close)
-
-            box.set_top(body, top)
-            box.set_bottom(body, bottom)
-            box.set_right(body, _x2)
-            box.set_border_color(body, body_color)
-
-            line.set_y1(wick1, _top)
-            line.set_y2(wick1, top)
-            f_set_line_x1(wick1, cx)
-            f_set_line_x2(wick1, cx)
-            line.set_color(wick1, body_color)
-
-            line.set_y1(wick2, _bottom)
-            line.set_y2(wick2, bottom)
-            f_set_line_x1(wick2, cx)
-            f_set_line_x2(wick2, cx)
-            line.set_color(wick2, body_color)
-
-        else if _is_ended
-            box.set_right(body, bar_index-session_end_offset)
 
     data
 
@@ -1653,62 +1410,6 @@ f_render_session (_show, Session data, _is_started, _is_ended, _color, _top, _bo
 
     data
 
-f_render_current_line (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2) =>
-    var line my_line = na
-    session = data.session()
-
-    if _show
-        if _is_started
-            my_line := line.new(_x1, close, _x1 + 2, close, color=_color, width=3)
-            my_line
-
-        else if bool(session)
-            line.set_y1(my_line, close)
-            line.set_y2(my_line, close)
-
-        else if _is_ended
-            line.delete(my_line)
-
-        true
-
-f_render_dots (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2) =>
-    var float _open = na
-    var box oc_box = na
-    var line oc_line_u = na
-    var line oc_line_l = na
-    session = data.session()
-
-    if _show and i_sess_box_dots
-        if _is_started
-            util.clear_lines(data.oclines, data.is_extended ? 0 : (i_history_period * 2) - 2)
-            util.clear_labels(data.oc_labels, data.is_extended ? 0 : math.max(0, (i_history_period * 2) - 2))
-
-            oc_line_u := line.new(_x1, open , _x2, open , color=color.new(_color, 70), style=line.style_dotted)
-            oc_line_l := line.new(_x1, close, _x2, close, color=color.new(_color, 70), style=line.style_dotted)
-            linefill.new(oc_line_u, oc_line_l, color.new(_color, i_sess_bgopacity2))
-
-            array.push(data.oclines, oc_line_u)
-            array.push(data.oclines, oc_line_l)
-
-            _open := open
-
-        else if  bool(session)
-            line.set_x2(oc_line_u, _x2)
-            line.set_x2(oc_line_l, _x2)
-            line.set_y1(oc_line_l, close)
-            line.set_y2(oc_line_l, close)
-
-        else if _is_ended
-            array.push(data.oc_labels, Dot.new(_x1, _open, '●', _color).create())
-            array.push(data.oc_labels, Dot.new(_x2-session_end_offset, close[1], '◉', _color).create())
-
-            line.set_x2(oc_line_u, _x2-session_end_offset)
-            line.set_x2(oc_line_l, _x2-session_end_offset)
-            line.set_y1(oc_line_l, close[1])
-            line.set_y2(oc_line_l, close[1])
-
-            _open := na
-    true
 
 // ------------------------
 // Drawing market
@@ -1771,7 +1472,7 @@ draw (_show, Session data, _extend, _show_fib, _show_op) =>
 
     [x1, x2, ohlc, _rightbars] = f_render_main(_show, data, is_started, is_ended, col, top, bottom)
 
-    if i_sess_box_style == 'Box' or i_sess_box_style == 'Background' or i_sess_box_style == 'Candle'
+    if i_sess_box_style == 'Box' or i_sess_box_style == 'Background'
         f_render_session(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
 
     else if i_sess_box_style == 'Hamburger'

@@ -54,7 +54,7 @@ color_transparent                   = #ffffff00
 
 // # General ----------------------------------------------------------------- #
 
-general_font                                = input.string("Monospace", "Text             ", options = ["Default", "Monospace"], inline = "1.0", group = "General")
+general_font                                = input.string("Small Caps", "Text Style", options = ["Small Caps", "Bold Modern", "Default", "Monospace"], inline = "1.0", group = "General", tooltip = "Pilih gaya teks:\n- Small Caps: Huruf kapital mini ala ICT/SMC\n- Bold Modern: Teks tebal sans-serif\n- Default: Sans-serif standar TradingView\n- Monospace: Teks fixed-width terminal")
 general_text                                = input.string("Tiny", "", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"], inline = "1.0", group = "General")
 
 // --- Custom Watermark Settings ---
@@ -301,8 +301,137 @@ method line_style(string style) =>
 
 method font_style(string font) =>
     out = switch font
-        'Default'   => font.family_default
         'Monospace' => font.family_monospace
+        => font.family_default
+    out
+
+to_bold(string txt) =>
+    string res = txt
+    res := str.replace_all(res, "a", "𝗮")
+    res := str.replace_all(res, "b", "𝗯")
+    res := str.replace_all(res, "c", "𝗰")
+    res := str.replace_all(res, "d", "𝗱")
+    res := str.replace_all(res, "e", "𝗲")
+    res := str.replace_all(res, "f", "𝗳")
+    res := str.replace_all(res, "g", "𝗴")
+    res := str.replace_all(res, "h", "𝗵")
+    res := str.replace_all(res, "i", "𝗶")
+    res := str.replace_all(res, "j", "𝗷")
+    res := str.replace_all(res, "k", "𝗸")
+    res := str.replace_all(res, "l", "𝗹")
+    res := str.replace_all(res, "m", "𝗺")
+    res := str.replace_all(res, "n", "𝗻")
+    res := str.replace_all(res, "o", "𝗼")
+    res := str.replace_all(res, "p", "𝗽")
+    res := str.replace_all(res, "q", "𝗾")
+    res := str.replace_all(res, "r", "𝗿")
+    res := str.replace_all(res, "s", "𝘀")
+    res := str.replace_all(res, "t", "𝘁")
+    res := str.replace_all(res, "u", "𝘂")
+    res := str.replace_all(res, "v", "𝘃")
+    res := str.replace_all(res, "w", "𝘄")
+    res := str.replace_all(res, "x", "𝘅")
+    res := str.replace_all(res, "y", "𝘆")
+    res := str.replace_all(res, "z", "𝘇")
+    res := str.replace_all(res, "A", "𝗔")
+    res := str.replace_all(res, "B", "𝗕")
+    res := str.replace_all(res, "C", "𝗖")
+    res := str.replace_all(res, "D", "𝗗")
+    res := str.replace_all(res, "E", "𝗘")
+    res := str.replace_all(res, "F", "𝗙")
+    res := str.replace_all(res, "G", "𝗚")
+    res := str.replace_all(res, "H", "𝗛")
+    res := str.replace_all(res, "I", "𝗜")
+    res := str.replace_all(res, "J", "𝗝")
+    res := str.replace_all(res, "K", "𝗞")
+    res := str.replace_all(res, "L", "𝗟")
+    res := str.replace_all(res, "M", "𝗠")
+    res := str.replace_all(res, "N", "𝗡")
+    res := str.replace_all(res, "O", "𝗢")
+    res := str.replace_all(res, "P", "𝗣")
+    res := str.replace_all(res, "Q", "𝗤")
+    res := str.replace_all(res, "R", "𝗥")
+    res := str.replace_all(res, "S", "𝗦")
+    res := str.replace_all(res, "T", "𝗧")
+    res := str.replace_all(res, "U", "𝗨")
+    res := str.replace_all(res, "V", "𝗩")
+    res := str.replace_all(res, "W", "𝗪")
+    res := str.replace_all(res, "X", "𝗫")
+    res := str.replace_all(res, "Y", "𝗬")
+    res := str.replace_all(res, "Z", "𝗭")
+    res := str.replace_all(res, "0", "𝟬")
+    res := str.replace_all(res, "1", "𝟭")
+    res := str.replace_all(res, "2", "𝟮")
+    res := str.replace_all(res, "3", "𝟯")
+    res := str.replace_all(res, "4", "𝟰")
+    res := str.replace_all(res, "5", "𝟱")
+    res := str.replace_all(res, "6", "𝟲")
+    res := str.replace_all(res, "7", "𝟳")
+    res := str.replace_all(res, "8", "𝟴")
+    res := str.replace_all(res, "9", "𝟵")
+    res
+
+to_small_caps(string txt) =>
+    string res = txt
+    res := str.replace_all(res, "A", "ᴀ")
+    res := str.replace_all(res, "a", "ᴀ")
+    res := str.replace_all(res, "B", "ʙ")
+    res := str.replace_all(res, "b", "ʙ")
+    res := str.replace_all(res, "C", "ᴄ")
+    res := str.replace_all(res, "c", "ᴄ")
+    res := str.replace_all(res, "D", "ᴅ")
+    res := str.replace_all(res, "d", "ᴅ")
+    res := str.replace_all(res, "E", "ᴇ")
+    res := str.replace_all(res, "e", "ᴇ")
+    res := str.replace_all(res, "F", "ғ")
+    res := str.replace_all(res, "f", "ғ")
+    res := str.replace_all(res, "G", "ɢ")
+    res := str.replace_all(res, "g", "ɢ")
+    res := str.replace_all(res, "H", "ʜ")
+    res := str.replace_all(res, "h", "ʜ")
+    res := str.replace_all(res, "I", "ɪ")
+    res := str.replace_all(res, "i", "ɪ")
+    res := str.replace_all(res, "J", "ᴊ")
+    res := str.replace_all(res, "j", "ᴊ")
+    res := str.replace_all(res, "K", "ᴋ")
+    res := str.replace_all(res, "k", "ᴋ")
+    res := str.replace_all(res, "L", "ʟ")
+    res := str.replace_all(res, "l", "ʟ")
+    res := str.replace_all(res, "M", "ᴍ")
+    res := str.replace_all(res, "m", "ᴍ")
+    res := str.replace_all(res, "N", "ɴ")
+    res := str.replace_all(res, "n", "ɴ")
+    res := str.replace_all(res, "O", "ᴏ")
+    res := str.replace_all(res, "o", "ᴏ")
+    res := str.replace_all(res, "P", "ᴘ")
+    res := str.replace_all(res, "p", "ᴘ")
+    res := str.replace_all(res, "Q", "ǫ")
+    res := str.replace_all(res, "q", "ǫ")
+    res := str.replace_all(res, "R", "ʀ")
+    res := str.replace_all(res, "r", "ʀ")
+    res := str.replace_all(res, "S", "ꜱ")
+    res := str.replace_all(res, "s", "ꜱ")
+    res := str.replace_all(res, "T", "ᴛ")
+    res := str.replace_all(res, "t", "ᴛ")
+    res := str.replace_all(res, "U", "ᴜ")
+    res := str.replace_all(res, "u", "ᴜ")
+    res := str.replace_all(res, "V", "ᴠ")
+    res := str.replace_all(res, "v", "ᴠ")
+    res := str.replace_all(res, "W", "ᴡ")
+    res := str.replace_all(res, "w", "ᴡ")
+    res := str.replace_all(res, "X", "x")
+    res := str.replace_all(res, "x", "x")
+    res := str.replace_all(res, "Y", "ʏ")
+    res := str.replace_all(res, "y", "ʏ")
+    res := str.replace_all(res, "Z", "ᴢ")
+    res := str.replace_all(res, "z", "ᴢ")
+    res
+
+format_text_style(string txt, string style) =>
+    switch style
+        "Bold Modern" => to_bold(txt)
+        "Small Caps"  => to_small_caps(txt)
+        => txt
 
 method candle_size(string size) =>
     out = switch size
@@ -689,13 +818,13 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
         x_min := na(x_min) ? candle.wick_x : math.min(x_min, candle.wick_x)
         x_max := na(x_max) ? candle.wick_x : math.max(x_max, candle.wick_x)
     x = math.round(math.avg(x_min, x_max))
-    txt = tf_label(tf)
+    txt = format_text_style(tf_label(tf), general_font)
 
     if htf_sweeps_countdown_show
         tc = time_close(tf, "")
         if not na(tc)
             rem = math.max(0, tc - timenow)
-            txt := txt + "\n" + format_countdown(rem)
+            txt := txt + "\n" + format_text_style(format_countdown(rem), general_font)
 
     if not na(y_top)
         bin.bin_lbl.push(label.new(x = x, y = y_top, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_down, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
@@ -866,71 +995,6 @@ f_text_halign(string pos) =>
     else
         text.align_right
 
-to_bold(string txt) =>
-    string res = txt
-    res := str.replace_all(res, "a", "𝗮")
-    res := str.replace_all(res, "b", "𝗯")
-    res := str.replace_all(res, "c", "𝗰")
-    res := str.replace_all(res, "d", "𝗱")
-    res := str.replace_all(res, "e", "𝗲")
-    res := str.replace_all(res, "f", "𝗳")
-    res := str.replace_all(res, "g", "𝗴")
-    res := str.replace_all(res, "h", "𝗵")
-    res := str.replace_all(res, "i", "𝗶")
-    res := str.replace_all(res, "j", "𝗷")
-    res := str.replace_all(res, "k", "𝗸")
-    res := str.replace_all(res, "l", "𝗹")
-    res := str.replace_all(res, "m", "𝗺")
-    res := str.replace_all(res, "n", "𝗻")
-    res := str.replace_all(res, "o", "𝗼")
-    res := str.replace_all(res, "p", "𝗽")
-    res := str.replace_all(res, "q", "𝗾")
-    res := str.replace_all(res, "r", "𝗿")
-    res := str.replace_all(res, "s", "𝘀")
-    res := str.replace_all(res, "t", "𝘁")
-    res := str.replace_all(res, "u", "𝘂")
-    res := str.replace_all(res, "v", "𝘃")
-    res := str.replace_all(res, "w", "𝘄")
-    res := str.replace_all(res, "x", "𝘅")
-    res := str.replace_all(res, "y", "𝘆")
-    res := str.replace_all(res, "z", "𝘇")
-    res := str.replace_all(res, "A", "𝗔")
-    res := str.replace_all(res, "B", "𝗕")
-    res := str.replace_all(res, "C", "𝗖")
-    res := str.replace_all(res, "D", "𝗗")
-    res := str.replace_all(res, "E", "𝗘")
-    res := str.replace_all(res, "F", "𝗙")
-    res := str.replace_all(res, "G", "𝗚")
-    res := str.replace_all(res, "H", "𝗛")
-    res := str.replace_all(res, "I", "𝗜")
-    res := str.replace_all(res, "J", "𝗝")
-    res := str.replace_all(res, "K", "𝗞")
-    res := str.replace_all(res, "L", "𝗟")
-    res := str.replace_all(res, "M", "𝗠")
-    res := str.replace_all(res, "N", "𝗡")
-    res := str.replace_all(res, "O", "𝗢")
-    res := str.replace_all(res, "P", "𝗣")
-    res := str.replace_all(res, "Q", "𝗤")
-    res := str.replace_all(res, "R", "𝗥")
-    res := str.replace_all(res, "S", "𝗦")
-    res := str.replace_all(res, "T", "𝗧")
-    res := str.replace_all(res, "U", "𝗨")
-    res := str.replace_all(res, "V", "𝗩")
-    res := str.replace_all(res, "W", "𝗪")
-    res := str.replace_all(res, "X", "𝗫")
-    res := str.replace_all(res, "Y", "𝗬")
-    res := str.replace_all(res, "Z", "𝗭")
-    res := str.replace_all(res, "0", "𝟬")
-    res := str.replace_all(res, "1", "𝟭")
-    res := str.replace_all(res, "2", "𝟮")
-    res := str.replace_all(res, "3", "𝟯")
-    res := str.replace_all(res, "4", "𝟰")
-    res := str.replace_all(res, "5", "𝟱")
-    res := str.replace_all(res, "6", "𝟲")
-    res := str.replace_all(res, "7", "𝟳")
-    res := str.replace_all(res, "8", "𝟴")
-    res := str.replace_all(res, "9", "𝟵")
-    res
 
 var table wm_tbl = table.new(position = f_table_pos(wm_position), columns = 1, rows = 2, bgcolor = wm_bg_color, frame_color = wm_border_color, frame_width = wm_border_width, border_color = wm_border_color, border_width = wm_border_width)
 
@@ -1265,17 +1329,19 @@ f_render_label (_show, Session data, _is_started, _color, _top, _bottom) =>
     if i_label_format_pips
         array.push(v_label, str.format(fmt_pips, util.toPips(v_chg)))
 
+    lbl_text = format_text_style(array.join(v_label, icon_separator), general_font)
+
     if _show
         if _is_started
             util.clear_labels(data.labels, data.is_extended ? 0 : i_history_period - 1)
 
-            my_label := label.new(bar_index, v_position_y, array.join(v_label, icon_separator), textcolor=_color, color=TRANSPARENT, size=i_label_size, style=i_label_position, tooltip='Pips')
+            my_label := label.new(bar_index, v_position_y, lbl_text, textcolor=_color, color=TRANSPARENT, size=i_label_size, style=i_label_position, tooltip='Pips', text_font_family=font_style(general_font))
 
             array.push(data.labels, my_label)
 
         else if bool(session)
             label.set_y(my_label, v_position_y)
-            label.set_text(my_label, array.join(v_label, icon_separator))
+            label.set_text(my_label, lbl_text)
 
     data
 
@@ -1376,8 +1442,8 @@ f_render_oprange (_show, Session data, _is_started, _is_ended, _x1, _x2, _color,
                 t1 = i_o_label_1 == 'price' ? str.tostring(top, format.mintick) : i_o_label_1
                 t2 = i_o_label_2 == 'price' ? str.tostring(btm, format.mintick) : i_o_label_2
 
-                my_label1 := label.new(_x1-1, top, t1, yloc=yloc.price, style=label.style_label_right, color=top_color, textcolor=top_text_color, size=i_o_size, tooltip=str.tostring(top, format.mintick))
-                my_label2 := label.new(_x1-1, btm, t2, yloc=yloc.price, style=label.style_label_right, color=btm_color, textcolor=bot_text_color, size=i_o_size, tooltip=str.tostring(btm, format.mintick))
+                my_label1 := label.new(_x1-1, top, format_text_style(t1, general_font), yloc=yloc.price, style=label.style_label_right, color=top_color, textcolor=top_text_color, size=i_o_size, tooltip=str.tostring(top, format.mintick), text_font_family=font_style(general_font))
+                my_label2 := label.new(_x1-1, btm, format_text_style(t2, general_font), yloc=yloc.price, style=label.style_label_right, color=btm_color, textcolor=bot_text_color, size=i_o_size, tooltip=str.tostring(btm, format.mintick), text_font_family=font_style(general_font))
 
                 array.push(data.opr_labels, my_label1)
                 array.push(data.opr_labels, my_label2)
@@ -1805,9 +1871,9 @@ alertcondition((not is_sess1) and ta.crossunder(close, sess1_ohlc.low) , 'Asia R
 if showAsiaRange and i_alert1_show
     if i_show_sess1
         if sess1_started
-            label.new(bar_index, close, 'Start', yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down)
+            label.new(bar_index, close, format_text_style('Start', general_font), yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down, text_font_family=font_style(general_font))
         if sess1_ended
-            label.new(bar_index - session_end_offset, close, 'End'  , yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down)
+            label.new(bar_index - session_end_offset, close, format_text_style('End'  , general_font), yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down, text_font_family=font_style(general_font))
 
 plot(showAsiaRange and i_alert3_show ? sess1_ohlc.high : na, 'sess1_high', style=plot.style_linebr, color=i_sess1_color)
 plot(showAsiaRange and i_alert3_show ? sess1_ohlc.low  : na, 'sess1_low' , style=plot.style_linebr, color=i_sess1_color, linewidth=2)

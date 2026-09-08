@@ -56,7 +56,23 @@ color_transparent                   = #ffffff00
 
     general_font                                = input.string("Monospace", "Text             ", options = ["Default", "Monospace"], inline = "1.0", group = "General")
     general_text                                = input.string("Tiny", "", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"], inline = "1.0", group = "General")
-    general_brand_show                          = input.bool(false, "Hide Brand", group = "General")
+    
+    // --- Custom Watermark Settings ---
+    g_wm                                        = "Custom Watermark Settings"
+    wm_show                                     = input.bool(true, "Tampilkan Watermark", group = g_wm)
+    wm_title                                    = input.string("Mayya Trading", "Title Watermark", group = g_wm)
+    wm_subtitle                                 = input.string("ICT & Asia Range Model", "Subtitle Watermark", group = g_wm)
+    wm_position                                 = input.string("Bottom Right", "Posisi Watermark", options = ["Top Left", "Top Center", "Top Right", "Middle Left", "Middle Center", "Middle Right", "Bottom Left", "Bottom Center", "Bottom Right"], group = g_wm, tooltip = "Atur penempatan watermark: Atas, Bawah, Kiri, Kanan, atau Tengah")
+    wm_font                                     = input.string("Default", "Gaya Font", options = ["Default", "Monospace"], group = g_wm)
+    wm_bold                                     = input.bool(true, "Teks Tebal (Bold)", group = g_wm, tooltip = "Mengubah karakter teks menjadi tebal (Bold Mathematical Unicode)")
+    wm_title_size                               = input.string("Normal", "Ukuran Title", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
+    wm_sub_size                                 = input.string("Small", "Ukuran Subtitle", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
+    wm_title_color                              = input.color(#00E676, "Warna Title", inline = "wm_col", group = g_wm)
+    wm_sub_color                                = input.color(color.gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
+    wm_opacity                                  = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
+    wm_border_width                             = input.int(0, "Ketebalan Border Box", minval = 0, maxval = 5, group = g_wm, tooltip = "0 = Tanpa border, 1-5 = Ketebalan garis pembatas box")
+    wm_border_color                             = input.color(color.new(color.gray, 70), "Warna Border Box", group = g_wm)
+    wm_bg_color                                 = input.color(color.new(color.black, 100), "Warna Background Box", group = g_wm)
     
     htf_sweeps_tf_1_show                        = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
     htf_sweeps_tf_1_tf                          = input.timeframe("15", "", inline = "1.0", group = "Timeframes")
@@ -822,14 +838,109 @@ else
     
     
 // # ========================================================================= #
-// # |   Brand   |
+// # |   Custom Watermark Rendering   |
 // # ========================================================================= #
 
-//#region
+//#region Watermark
 
-if barstate.isfirst and general_brand_show == false and showICTModel
-    var table brand = table.new(position.bottom_right, 1, 1, bgcolor = chart.bg_color)
-    table.cell(brand, 0, 0,  "©️ Mayya", text_color = colors_gray, text_halign = text.align_center, text_size = text_size(general_text), text_font_family = font_style(general_font))
+f_table_pos(string pos) =>
+    switch pos
+        "Top Left"      => position.top_left
+        "Top Center"    => position.top_center
+        "Top Right"     => position.top_right
+        "Middle Left"   => position.middle_left
+        "Middle Center" => position.middle_center
+        "Middle Right"  => position.middle_right
+        "Bottom Left"   => position.bottom_left
+        "Bottom Center" => position.bottom_center
+        "Bottom Right"  => position.bottom_right
+        => position.bottom_right
+
+f_text_halign(string pos) =>
+    if str.contains(pos, "Left")
+        text.align_left
+    else if str.contains(pos, "Center")
+        text.align_center
+    else
+        text.align_right
+
+to_bold(string txt) =>
+    string res = txt
+    res := str.replace_all(res, "a", "𝗮")
+    res := str.replace_all(res, "b", "𝗯")
+    res := str.replace_all(res, "c", "𝗰")
+    res := str.replace_all(res, "d", "𝗱")
+    res := str.replace_all(res, "e", "𝗲")
+    res := str.replace_all(res, "f", "𝗳")
+    res := str.replace_all(res, "g", "𝗴")
+    res := str.replace_all(res, "h", "𝗵")
+    res := str.replace_all(res, "i", "𝗶")
+    res := str.replace_all(res, "j", "𝗷")
+    res := str.replace_all(res, "k", "𝗸")
+    res := str.replace_all(res, "l", "𝗹")
+    res := str.replace_all(res, "m", "𝗺")
+    res := str.replace_all(res, "n", "𝗻")
+    res := str.replace_all(res, "o", "𝗼")
+    res := str.replace_all(res, "p", "𝗽")
+    res := str.replace_all(res, "q", "𝗾")
+    res := str.replace_all(res, "r", "𝗿")
+    res := str.replace_all(res, "s", "𝘀")
+    res := str.replace_all(res, "t", "𝘁")
+    res := str.replace_all(res, "u", "𝘂")
+    res := str.replace_all(res, "v", "𝘃")
+    res := str.replace_all(res, "w", "𝘄")
+    res := str.replace_all(res, "x", "𝘅")
+    res := str.replace_all(res, "y", "𝘆")
+    res := str.replace_all(res, "z", "𝘇")
+    res := str.replace_all(res, "A", "𝗔")
+    res := str.replace_all(res, "B", "𝗕")
+    res := str.replace_all(res, "C", "𝗖")
+    res := str.replace_all(res, "D", "𝗗")
+    res := str.replace_all(res, "E", "𝗘")
+    res := str.replace_all(res, "F", "𝗙")
+    res := str.replace_all(res, "G", "𝗚")
+    res := str.replace_all(res, "H", "𝗛")
+    res := str.replace_all(res, "I", "𝗜")
+    res := str.replace_all(res, "J", "𝗝")
+    res := str.replace_all(res, "K", "𝗞")
+    res := str.replace_all(res, "L", "𝗟")
+    res := str.replace_all(res, "M", "𝗠")
+    res := str.replace_all(res, "N", "𝗡")
+    res := str.replace_all(res, "O", "𝗢")
+    res := str.replace_all(res, "P", "𝗣")
+    res := str.replace_all(res, "Q", "𝗤")
+    res := str.replace_all(res, "R", "𝗥")
+    res := str.replace_all(res, "S", "𝗦")
+    res := str.replace_all(res, "T", "𝗧")
+    res := str.replace_all(res, "U", "𝗨")
+    res := str.replace_all(res, "V", "𝗩")
+    res := str.replace_all(res, "W", "𝗪")
+    res := str.replace_all(res, "X", "𝗫")
+    res := str.replace_all(res, "Y", "𝗬")
+    res := str.replace_all(res, "Z", "𝗭")
+    res := str.replace_all(res, "0", "𝟬")
+    res := str.replace_all(res, "1", "𝟭")
+    res := str.replace_all(res, "2", "𝟮")
+    res := str.replace_all(res, "3", "𝟯")
+    res := str.replace_all(res, "4", "𝟰")
+    res := str.replace_all(res, "5", "𝟱")
+    res := str.replace_all(res, "6", "𝟲")
+    res := str.replace_all(res, "7", "𝟳")
+    res := str.replace_all(res, "8", "𝟴")
+    res := str.replace_all(res, "9", "𝟵")
+    res
+
+if wm_show and barstate.islast
+    var table wm_tbl = table.new(position = f_table_pos(wm_position), columns = 1, rows = 2, bgcolor = wm_bg_color, frame_color = wm_border_color, frame_width = wm_border_width, border_color = wm_border_color, border_width = wm_border_width)
+    
+    halign = f_text_halign(wm_position)
+    title_text = wm_bold ? to_bold(wm_title) : wm_title
+    sub_text   = (wm_bold and wm_subtitle != "") ? to_bold(wm_subtitle) : wm_subtitle
+    
+    table.cell(table_id = wm_tbl, column = 0, row = 0, text = title_text, text_color = color.new(wm_title_color, wm_opacity), text_size = text_size(wm_title_size), text_halign = halign, text_font_family = font_style(wm_font))
+    
+    if wm_subtitle != ""
+        table.cell(table_id = wm_tbl, column = 0, row = 1, text = sub_text, text_color = color.new(wm_sub_color, wm_opacity), text_size = text_size(wm_sub_size), text_halign = halign, text_font_family = font_style(wm_font))
 
 //#endregion
 

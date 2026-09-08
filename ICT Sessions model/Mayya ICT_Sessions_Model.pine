@@ -598,7 +598,8 @@ method add_htf_candle(array<UDT_HTF_Candle> htf_candles, UDT_HTF_Candle candle, 
 
 method detect_htf_candle(array<UDT_HTF_Candle> htf_candles, string tf, string ltf) =>
     UDT_HTF_Candle htf_candle = na
-    if session_begins(tf, "", na) or htf_candles.size()==0
+    bool is_new = session_begins(tf, "", na) or htf_candles.size() == 0
+    if is_new
         UDT_HTF_Candle candle = UDT_HTF_Candle.new(tf = tf, htf_sweeps = array.new<UDT_Sweep>(), ltf_sweeps = array.new<UDT_Sweep>())
         candle.o := open
         candle.c := close
@@ -611,12 +612,13 @@ method detect_htf_candle(array<UDT_HTF_Candle> htf_candles, string tf, string lt
         candle.ot := time
         candle.bull  := is_bullish_candle(candle.c, candle.o, candle.h, candle.l)
         if htf_candles.size() > 0
-            last_candle = htf_candles.get(0)
+            UDT_HTF_Candle last_candle = htf_candles.get(0)
             last_candle.is_closed := true
             last_candle.ct := time
         htf_candle := candle
-    else if in_session(tf, "", na) and htf_candles.size()>0
-        candle = htf_candles.get(0)
+    
+    if not is_new and in_session(tf, "", na) and htf_candles.size() > 0
+        UDT_HTF_Candle candle = htf_candles.get(0)
         candle.c := close
         candle.c_idx := bar_index + 1
         candle.ct := time

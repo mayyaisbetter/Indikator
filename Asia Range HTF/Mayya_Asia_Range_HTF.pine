@@ -1041,7 +1041,6 @@ g5                      = '// OPENING RANGE //'
 g7                      = '// FIBONACCI LEVELS //'
 g8                      = '// OPTIONS //'
 g11                     = '// CANDLE //'
-g10                     = '// ALERTS VISUALISED //'
 
 
 //defined
@@ -1270,10 +1269,6 @@ i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bot
 i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g6))
 i_label_position        = f_get_label_position(i_label_position_y, i_label_position_s)
 
-// Alerts
-i_alert1_show           = input.bool(false, 'Alerts - Sessions start/end', group=g10)
-bool i_alert2_show      = false
-i_alert3_show           = input.bool(false, 'Alerts - Price crossed session\'s High/Low after session closed', group=g10)
 
 // ------------------------
 // Drawing labels
@@ -1513,18 +1508,5 @@ alertcondition(sess1_ended,     'Asia Range ended'  )
 alertcondition((not is_sess1) and ta.crossover (close, sess1_ohlc.high), 'Asia Range High crossed (after session closed)')
 alertcondition((not is_sess1) and ta.crossunder(close, sess1_ohlc.low) , 'Asia Range Low crossed (after session closed)' )
 
-// Alerts visualized
-if showAsiaRange and i_alert1_show
-    if i_show_sess1
-        if sess1_started
-            label.new(bar_index, close, format_text_style('Start', general_font), yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down, text_font_family=font_style(general_font))
-        if sess1_ended
-            label.new(bar_index - session_end_offset, close, format_text_style('End'  , general_font), yloc=yloc.abovebar, color=i_sess1_color, textcolor=color_text, size=size.small, style=label.style_label_down, text_font_family=font_style(general_font))
-
-plot(showAsiaRange and i_alert3_show ? sess1_ohlc.high : na, 'sess1_high', style=plot.style_linebr, color=i_sess1_color)
-plot(showAsiaRange and i_alert3_show ? sess1_ohlc.low  : na, 'sess1_low' , style=plot.style_linebr, color=i_sess1_color, linewidth=2)
-
-plotshape(showAsiaRange and i_alert3_show and (not is_sess1) and ta.crossover (close, sess1_ohlc.high) ? sess1_ohlc.high : na, 'cross sess1_high', color=i_sess1_color, style=shape.triangleup  , location=location.absolute, size=size.tiny)
-plotshape(showAsiaRange and i_alert3_show and (not is_sess1) and ta.crossunder(close, sess1_ohlc.low)  ? sess1_ohlc.low  : na, 'cross sess1_low' , color=i_sess1_color, style=shape.triangledown, location=location.absolute, size=size.tiny)
 
 // ======== End of sessions.pine ========

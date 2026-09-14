@@ -47,9 +47,6 @@ wm_opacity          = input.int(20, "Transparansi Teks (%)", minval = 0, maxval 
 // # HTF Timeframe Mapping Helper ------------------------------------------- #
 f_tf_to_res(string tf_str) =>
     switch tf_str
-        '1m'  => '1'
-        '3m'  => '3'
-        '5m'  => '5'
         '15m' => '15'
         '30m' => '30'
         '45m' => '45'
@@ -70,34 +67,19 @@ f_tf_to_res(string tf_str) =>
 
 // # Timeframes (HTF Candle) ------------------------------------------------- #
 htf_sweeps_tf_1_show   = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
-htf_sweeps_tf_1_input  = input.string("15m", "", inline = "1.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_1_number = input.int(10, "", inline = "1.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_1_input  = input.string("15m", "", inline = "1.0", group = "Timeframes", options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
+htf_sweeps_tf_1_number = input.int(10, "", inline = "1.0", group = "Timeframes", minval = 1, maxval = 10)
 htf_sweeps_tf_1_tf     = f_tf_to_res(htf_sweeps_tf_1_input)
 
 htf_sweeps_tf_2_show   = input.bool(true, "HTF II    ", inline = "2.0", group = "Timeframes")
-htf_sweeps_tf_2_input  = input.string("1h", "", inline = "2.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_2_number = input.int(8, "", inline = "2.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_2_input  = input.string("1h", "", inline = "2.0", group = "Timeframes", options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
+htf_sweeps_tf_2_number = input.int(8, "", inline = "2.0", group = "Timeframes", minval = 1, maxval = 10)
 htf_sweeps_tf_2_tf     = f_tf_to_res(htf_sweeps_tf_2_input)
 
 htf_sweeps_tf_3_show   = input.bool(true, "HTF III   ", inline = "3.0", group = "Timeframes")
-htf_sweeps_tf_3_input  = input.string("4h", "", inline = "3.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_3_number = input.int(6, "", inline = "3.0", group = "Timeframes", minval = 1, maxval = 60)
+htf_sweeps_tf_3_input  = input.string("4h", "", inline = "3.0", group = "Timeframes", options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
+htf_sweeps_tf_3_number = input.int(6, "", inline = "3.0", group = "Timeframes", minval = 1, maxval = 10)
 htf_sweeps_tf_3_tf     = f_tf_to_res(htf_sweeps_tf_3_input)
-
-htf_sweeps_tf_4_show   = input.bool(true, "HTF IV   ", inline = "4.0", group = "Timeframes")
-htf_sweeps_tf_4_input  = input.string("1D", "", inline = "4.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_4_number = input.int(4, "", inline = "4.0", group = "Timeframes", minval = 1, maxval = 60)
-htf_sweeps_tf_4_tf     = f_tf_to_res(htf_sweeps_tf_4_input)
-
-htf_sweeps_tf_5_show   = input.bool(true, "HTF V    ", inline = "5.0", group = "Timeframes")
-htf_sweeps_tf_5_input  = input.string("1W", "", inline = "5.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_5_number = input.int(2, "", inline = "5.0", group = "Timeframes", minval = 1, maxval = 60)
-htf_sweeps_tf_5_tf     = f_tf_to_res(htf_sweeps_tf_5_input)
-
-htf_sweeps_tf_6_show   = input.bool(false, "HTF VI   ", inline = "6.0", group = "Timeframes")
-htf_sweeps_tf_6_input  = input.string("1M", "", inline = "6.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_6_number = input.int(1, "", inline = "6.0", group = "Timeframes", minval = 1, maxval = 60)
-htf_sweeps_tf_6_tf     = f_tf_to_res(htf_sweeps_tf_6_input)
 
 // # HTF Styling ------------------------------------------------------------- #
 htf_sweeps_bull_color        = input.color(colors_white, "Coloring     ", inline = "1.0", group = "HTF")
@@ -654,18 +636,12 @@ method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf) =>
 var htf_1_candles = array.new<UDT_HTF_Candle>()
 var htf_2_candles = array.new<UDT_HTF_Candle>()
 var htf_3_candles = array.new<UDT_HTF_Candle>()
-var htf_4_candles = array.new<UDT_HTF_Candle>()
-var htf_5_candles = array.new<UDT_HTF_Candle>()
-var htf_6_candles = array.new<UDT_HTF_Candle>()
 
 var int htf_candle_width = candle_size(htf_sweeps_candle_width)
 
 var bool tf_1_show = htf_sweeps_tf_1_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_1_tf)
 var bool tf_2_show = htf_sweeps_tf_2_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_2_tf)
 var bool tf_3_show = htf_sweeps_tf_3_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_3_tf)
-var bool tf_4_show = htf_sweeps_tf_4_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_4_tf)
-var bool tf_5_show = htf_sweeps_tf_5_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_5_tf)
-var bool tf_6_show = htf_sweeps_tf_6_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_6_tf)
 
 if showHTFCandle
     bin.clean_bin()
@@ -676,12 +652,6 @@ if showHTFCandle
         htf_2_candles.add_htf_candle(htf_2_candles.detect_htf_candle(htf_sweeps_tf_2_tf), htf_sweeps_tf_2_number)
     if tf_3_show
         htf_3_candles.add_htf_candle(htf_3_candles.detect_htf_candle(htf_sweeps_tf_3_tf), htf_sweeps_tf_3_number)
-    if tf_4_show
-        htf_4_candles.add_htf_candle(htf_4_candles.detect_htf_candle(htf_sweeps_tf_4_tf), htf_sweeps_tf_4_number)
-    if tf_5_show
-        htf_5_candles.add_htf_candle(htf_5_candles.detect_htf_candle(htf_sweeps_tf_5_tf), htf_sweeps_tf_5_number)
-    if tf_6_show
-        htf_6_candles.add_htf_candle(htf_6_candles.detect_htf_candle(htf_sweeps_tf_6_tf), htf_sweeps_tf_6_number)
     
     if barstate.islast
         int offset = htf_sweeps_offset
@@ -699,21 +669,6 @@ if showHTFCandle
         if tf_3_show
             htf_3_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
             htf_3_candles.plot_htf(htf_sweeps_tf_3_tf)
-            offset += get_htf_candle_shift(0, htf_sweeps_offset, htf_sweeps_space, htf_candle_width, htf_sweeps_tf_3_number)
-        
-        if tf_4_show
-            htf_4_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
-            htf_4_candles.plot_htf(htf_sweeps_tf_4_tf)
-            offset += get_htf_candle_shift(0, htf_sweeps_offset, htf_sweeps_space, htf_candle_width, htf_sweeps_tf_4_number)
-        
-        if tf_5_show
-            htf_5_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
-            htf_5_candles.plot_htf(htf_sweeps_tf_5_tf)
-            offset += get_htf_candle_shift(0, htf_sweeps_offset, htf_sweeps_space, htf_candle_width, htf_sweeps_tf_5_number)
-        
-        if tf_6_show
-            htf_6_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
-            htf_6_candles.plot_htf(htf_sweeps_tf_6_tf)
 else
     bin.clean_bin()
 //#endregion

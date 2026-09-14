@@ -1,0 +1,357 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Mayya
+//@version=6
+
+indicator("PSP & SMT Divergence [Mayya]", shorttitle="PSP & SMT [Mayya]", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
+
+// # ========================================================================= #
+// # |   Constants & Style Helpers   |
+// # ========================================================================= #
+
+//#region Constants & Helpers
+color_c_green       = #089981
+color_c_red         = #f23645
+color_transparent   = #ffffff00
+
+f_line_style(string s) =>
+    switch s
+        "Solid"  => line.style_solid
+        "Dashed" => line.style_dashed
+        "Dotted" => line.style_dotted
+        => line.style_solid
+
+f_label_size(string s) =>
+    switch s
+        "Tiny"   => size.tiny
+        "Small"  => size.small
+        "Normal" => size.normal
+        "Large"  => size.large
+        => size.normal
+
+f_short_name(string sym) =>
+    arr = str.split(sym, ":")
+    arr.get(arr.size() - 1)
+//#endregion
+
+// # ========================================================================= #
+// # |   Inputs: Correlated Symbols (3 Slots Maksimal)   |
+// # ========================================================================= #
+
+//#region Correlated Symbols
+g_sym         = "📊 Simbol Korelasi (Maks. 3 Pair)"
+use_custom_tf = input.bool(false, "Gunakan Custom Timeframe?", group = g_sym, tooltip = "Jika aktif, data simbol korelasi diambil dari timeframe khusus. Jika mati, mengikuti timeframe chart saat ini.")
+custom_tf     = input.timeframe("60", "Custom Timeframe", group = g_sym)
+target_tf     = use_custom_tf ? custom_tf : timeframe.period
+
+// Slot 1
+enable_s1     = input.bool(true, "Aktif", inline = "s1", group = g_sym)
+sym1          = input.symbol("CME_MINI:NQ1!", "Pair 1", inline = "s1", group = g_sym)
+inv1          = input.bool(false, "Inverse", inline = "s1", group = g_sym, tooltip = "Balikkan pergerakan harga untuk aset yang berkorelasi negatif (seperti DXY)")
+
+// Slot 2
+enable_s2     = input.bool(true, "Aktif", inline = "s2", group = g_sym)
+sym2          = input.symbol("CME_MINI:ES1!", "Pair 2", inline = "s2", group = g_sym)
+inv2          = input.bool(false, "Inverse", inline = "s2", group = g_sym)
+
+// Slot 3
+enable_s3     = input.bool(false, "Aktif", inline = "s3", group = g_sym)
+sym3          = input.symbol("CBOT_MINI:YM1!", "Pair 3", inline = "s3", group = g_sym)
+inv3          = input.bool(false, "Inverse", inline = "s3", group = g_sym)
+
+s1_name = f_short_name(sym1)
+s2_name = f_short_name(sym2)
+s3_name = f_short_name(sym3)
+//#endregion
+
+// # ========================================================================= #
+// # |   Inputs: SMT Divergence Settings   |
+// # ========================================================================= #
+
+//#region SMT Settings
+g_smt              = "⚡ SMT Divergence (Smart Money Technique)"
+smt_show           = input.bool(true, "Aktifkan Garis SMT", group = g_smt)
+smt_line_color     = input.color(color_c_red, "Warna Garis SMT", inline = "smt_l", group = g_smt)
+smt_line_style_str = input.string("Solid", "Gaya Garis", options = ["Solid", "Dashed", "Dotted"], inline = "smt_l", group = g_smt)
+smt_line_width     = input.int(2, "Lebar", minval = 1, maxval = 4, inline = "smt_l", group = g_smt)
+smt_len            = input.int(4, "Sensitivitas Swing SMT", minval = 1, maxval = 15, group = g_smt, tooltip = "Jumlah bar di kiri untuk mendeteksi swing point")
+smt_max_lines      = input.int(5, "Maksimum Garis", minval = 1, maxval = 20, group = g_smt)
+
+smt_lbl_show       = input.bool(true, "Tampilkan Label SMT", inline = "smt_lbl", group = g_smt)
+smt_lbl_size_str   = input.string("Normal", "Ukuran", options = ["Tiny", "Small", "Normal", "Large"], inline = "smt_lbl", group = g_smt)
+smt_lbl_color      = input.color(color_c_red, "Warna Teks", inline = "smt_lbl_c", group = g_smt)
+smt_lbl_bg         = input.color(color_transparent, "Background", inline = "smt_lbl_c", group = g_smt)
+
+smt_line_style     = f_line_style(smt_line_style_str)
+smt_lbl_size       = f_label_size(smt_lbl_size_str)
+//#endregion
+
+// # ========================================================================= #
+// # |   Inputs: Price Symmetry Pivot (PSP) Settings   |
+// # ========================================================================= #
+
+//#region PSP Settings
+g_psp              = "🕯️ Price Symmetry Pivot (PSP)"
+psp_show           = input.bool(true, "Aktifkan Pewarnaan Candle PSP", group = g_psp)
+psp_bull_color     = input.color(color_c_green, "Warna Bullish PSP", inline = "psp_col", group = g_psp)
+psp_bear_color     = input.color(color_c_red,   "Warna Bearish PSP", inline = "psp_col", group = g_psp)
+//#endregion
+
+// # ========================================================================= #
+// # |   Inputs: Watermark / Dashboard Settings   |
+// # ========================================================================= #
+
+//#region Watermark
+g_wm               = "🏷️ Watermark"
+wm_show            = input.bool(true, "Tampilkan Info Status", group = g_wm)
+wm_position        = input.string("Bottom Right", "Posisi", options = ["Top Right", "Bottom Right", "Bottom Left", "Top Left"], group = g_wm)
+wm_color           = input.color(color.gray, "Warna Teks", group = g_wm)
+//#endregion
+
+// # ========================================================================= #
+// # |   Data Hub: Fetch Correlated Pairs (Optimized Bundling)   |
+// # ========================================================================= #
+
+//#region Data Fetching
+[raw_o1, raw_h1, raw_l1, raw_c1] = enable_s1 ? request.security(sym1, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off) : [open, high, low, close]
+[raw_o2, raw_h2, raw_l2, raw_c2] = enable_s2 ? request.security(sym2, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off) : [open, high, low, close]
+[raw_o3, raw_h3, raw_l3, raw_c3] = enable_s3 ? request.security(sym3, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off) : [open, high, low, close]
+
+// Handle Inverse transformation
+s1_O = inv1 ? -raw_c1 : raw_o1
+s1_H = inv1 ? -raw_l1 : raw_h1
+s1_L = inv1 ? -raw_h1 : raw_l1
+s1_C = inv1 ? -raw_o1 : raw_c1
+
+s2_O = inv2 ? -raw_c2 : raw_o2
+s2_H = inv2 ? -raw_l2 : raw_h2
+s2_L = inv2 ? -raw_h2 : raw_l2
+s2_C = inv2 ? -raw_o2 : raw_c2
+
+s3_O = inv3 ? -raw_c3 : raw_o3
+s3_H = inv3 ? -raw_l3 : raw_h3
+s3_L = inv3 ? -raw_h3 : raw_l3
+s3_C = inv3 ? -raw_o3 : raw_c3
+//#endregion
+
+// # ========================================================================= #
+// # |   PSP Engine: Candle Divergence Detection   |
+// # ========================================================================= #
+
+//#region PSP Logic
+bool psp_bull_s1 = enable_s1 and not na(s1_C) and (close > open) and (s1_C < s1_O)
+bool psp_bull_s2 = enable_s2 and not na(s2_C) and (close > open) and (s2_C < s2_O)
+bool psp_bull_s3 = enable_s3 and not na(s3_C) and (close > open) and (s3_C < s3_O)
+bool is_psp_bull = psp_bull_s1 or psp_bull_s2 or psp_bull_s3
+
+bool psp_bear_s1 = enable_s1 and not na(s1_C) and (close < open) and (s1_C > s1_O)
+bool psp_bear_s2 = enable_s2 and not na(s2_C) and (close < open) and (s2_C > s2_O)
+bool psp_bear_s3 = enable_s3 and not na(s3_C) and (close < open) and (s3_C > s3_O)
+bool is_psp_bear = psp_bear_s1 or psp_bear_s2 or psp_bear_s3
+
+// Terapkan Pewarnaan Candle PSP (Default: Hijau Bullish, Merah Bearish)
+color psp_color = na
+if psp_show
+    if is_psp_bull
+        psp_color := psp_bull_color
+    else if is_psp_bear
+        psp_color := psp_bear_color
+
+barcolor(psp_color, title = "Warna Candle PSP")
+//#endregion
+
+// # ========================================================================= #
+// # |   SMT Engine: Swing Divergence & Center-Aligned Lines   |
+// # ========================================================================= #
+
+//#region SMT Logic
+// Body values untuk evaluasi ICT yang presisi
+m_BL  = math.min(open, close)
+m_BH  = math.max(open, close)
+s1_BL = math.min(s1_O, s1_C)
+s1_BH = math.max(s1_O, s1_C)
+s2_BL = math.min(s2_O, s2_C)
+s2_BH = math.max(s2_O, s2_C)
+s3_BL = math.min(s3_O, s3_C)
+s3_BH = math.max(s3_O, s3_C)
+
+// Deteksi Swing Point pada bar[1]
+int rb = 1
+float left_low  = ta.lowest(low, smt_len)[rb + 1]
+float left_high = ta.highest(high, smt_len)[rb + 1]
+
+bool is_swing_low  = low[rb] < left_low and low[rb] < low[0]
+bool is_swing_high = high[rb] > left_high and high[rb] > high[0]
+
+// Variabel memori swing point sebelumnya
+var float pl_val    = na, var int pl_time   = na, var float pl_bval   = na
+var float pl_s1_val = na, var float pl_s1_bval = na
+var float pl_s2_val = na, var float pl_s2_bval = na
+var float pl_s3_val = na, var float pl_s3_bval = na
+
+var float ph_val    = na, var int ph_time   = na, var float ph_bval   = na
+var float ph_s1_val = na, var float ph_s1_bval = na
+var float ph_s2_val = na, var float ph_s2_bval = na
+var float ph_s3_val = na, var float ph_s3_bval = na
+
+// Array storage untuk manajemen memori
+var line[]  smt_lines_arr  = array.new_line()
+var label[] smt_labels_arr = array.new_label()
+
+// ── Evaluasi SMT Bullish (Swing Low) ──────────────────────────
+bool s1_bull_div = enable_s1 and not na(pl_s1_val) and ((low[1] < pl_val and s1_L[1] > pl_s1_val) or (low[1] > pl_val and s1_L[1] < pl_s1_val) or (m_BL[1] < pl_bval and s1_BL[1] > pl_s1_bval) or (m_BL[1] > pl_bval and s1_BL[1] < pl_s1_bval))
+bool s2_bull_div = enable_s2 and not na(pl_s2_val) and ((low[1] < pl_val and s2_L[1] > pl_s2_val) or (low[1] > pl_val and s2_L[1] < pl_s2_val) or (m_BL[1] < pl_bval and s2_BL[1] > pl_s2_bval) or (m_BL[1] > pl_bval and s2_BL[1] < pl_s2_bval))
+bool s3_bull_div = enable_s3 and not na(pl_s3_val) and ((low[1] < pl_val and s3_L[1] > pl_s3_val) or (low[1] > pl_val and s3_L[1] < pl_s3_val) or (m_BL[1] < pl_bval and s3_BL[1] > pl_s3_bval) or (m_BL[1] > pl_bval and s3_BL[1] < pl_s3_bval))
+bool is_smt_bull = smt_show and is_swing_low and not na(pl_val) and (s1_bull_div or s2_bull_div or s3_bull_div)
+
+if is_swing_low
+    if is_smt_bull
+        // Tentukan titik harga yang dihubungkan
+        float y1 = pl_val
+        float y2 = low[1]
+        
+        // Buat garis SMT (Default: Merah)
+        line l_smt = line.new(x1 = pl_time, y1 = y1, x2 = time[1], y2 = y2,
+                              xloc = xloc.bar_time, color = smt_line_color,
+                              width = smt_line_width, style = smt_line_style)
+        
+        // Rangkai nama korelasi
+        string div_txt = ""
+        if s1_bull_div
+            div_txt := s1_name
+        if s2_bull_div
+            div_txt := div_txt == "" ? s2_name : div_txt + " & " + s2_name
+        if s3_bull_div
+            div_txt := div_txt == "" ? s3_name : div_txt + " & " + s3_name
+        
+        string smt_text = "SMT (" + div_txt + ")"
+        
+        // Koordinat tepat di CENTER (tengah-tengah) garis
+        int mid_x   = int(math.avg(pl_time, time[1]))
+        float mid_y = math.avg(y1, y2)
+        
+        label l_lbl = smt_lbl_show ? label.new(x = mid_x, y = mid_y, text = smt_text,
+                                                xloc = xloc.bar_time, color = smt_lbl_bg,
+                                                textcolor = smt_lbl_color, style = label.style_label_center,
+                                                size = smt_lbl_size) : na
+        
+        array.push(smt_lines_arr, l_smt)
+        if not na(l_lbl)
+            array.push(smt_labels_arr, l_lbl)
+        
+        // Batasi jumlah garis agar performa tetap ringan
+        while array.size(smt_lines_arr) > smt_max_lines
+            line.delete(array.shift(smt_lines_arr))
+        while array.size(smt_labels_arr) > smt_max_lines
+            label.delete(array.shift(smt_labels_arr))
+    
+    // Perbarui state swing low
+    pl_val     := low[1]
+    pl_time    := time[1]
+    pl_bval    := m_BL[1]
+    pl_s1_val  := s1_L[1]
+    pl_s1_bval := s1_BL[1]
+    pl_s2_val  := s2_L[1]
+    pl_s2_bval := s2_BL[1]
+    pl_s3_val  := s3_L[1]
+    pl_s3_bval := s3_BL[1]
+
+// ── Evaluasi SMT Bearish (Swing High) ─────────────────────────
+bool s1_bear_div = enable_s1 and not na(ph_s1_val) and ((high[1] > ph_val and s1_H[1] < ph_s1_val) or (high[1] < ph_val and s1_H[1] > ph_s1_val) or (m_BH[1] > ph_bval and s1_BH[1] < ph_s1_bval) or (m_BH[1] < ph_bval and s1_BH[1] > ph_s1_bval))
+bool s2_bear_div = enable_s2 and not na(ph_s2_val) and ((high[1] > ph_val and s2_H[1] < ph_s2_val) or (high[1] < ph_val and s2_H[1] > ph_s2_val) or (m_BH[1] > ph_bval and s2_BH[1] < ph_s2_bval) or (m_BH[1] < ph_bval and s2_BH[1] > ph_s2_bval))
+bool s3_bear_div = enable_s3 and not na(ph_s3_val) and ((high[1] > ph_val and s3_H[1] < ph_s3_val) or (high[1] < ph_val and s3_H[1] > ph_s3_val) or (m_BH[1] > ph_bval and s3_BH[1] < ph_s3_bval) or (m_BH[1] < ph_bval and s3_BH[1] > ph_s3_bval))
+bool is_smt_bear = smt_show and is_swing_high and not na(ph_val) and (s1_bear_div or s2_bear_div or s3_bear_div)
+
+if is_swing_high
+    if is_smt_bear
+        // Tentukan titik harga yang dihubungkan
+        float y1 = ph_val
+        float y2 = high[1]
+        
+        // Buat garis SMT (Default: Merah)
+        line l_smt = line.new(x1 = ph_time, y1 = y1, x2 = time[1], y2 = y2,
+                              xloc = xloc.bar_time, color = smt_line_color,
+                              width = smt_line_width, style = smt_line_style)
+        
+        // Rangkai nama korelasi
+        string div_txt = ""
+        if s1_bear_div
+            div_txt := s1_name
+        if s2_bear_div
+            div_txt := div_txt == "" ? s2_name : div_txt + " & " + s2_name
+        if s3_bear_div
+            div_txt := div_txt == "" ? s3_name : div_txt + " & " + s3_name
+        
+        string smt_text = "SMT (" + div_txt + ")"
+        
+        // Koordinat tepat di CENTER (tengah-tengah) garis
+        int mid_x   = int(math.avg(ph_time, time[1]))
+        float mid_y = math.avg(y1, y2)
+        
+        label l_lbl = smt_lbl_show ? label.new(x = mid_x, y = mid_y, text = smt_text,
+                                                xloc = xloc.bar_time, color = smt_lbl_bg,
+                                                textcolor = smt_lbl_color, style = label.style_label_center,
+                                                size = smt_lbl_size) : na
+        
+        array.push(smt_lines_arr, l_smt)
+        if not na(l_lbl)
+            array.push(smt_labels_arr, l_lbl)
+        
+        // Batasi jumlah garis agar performa tetap ringan
+        while array.size(smt_lines_arr) > smt_max_lines
+            line.delete(array.shift(smt_lines_arr))
+        while array.size(smt_labels_arr) > smt_max_lines
+            label.delete(array.shift(smt_labels_arr))
+    
+    // Perbarui state swing high
+    ph_val     := high[1]
+    ph_time    := time[1]
+    ph_bval    := m_BH[1]
+    ph_s1_val  := s1_H[1]
+    ph_s1_bval := s1_BH[1]
+    ph_s2_val  := s2_H[1]
+    ph_s2_bval := s2_BH[1]
+    ph_s3_val  := s3_H[1]
+    ph_s3_bval := s3_BH[1]
+//#endregion
+
+// # ========================================================================= #
+// # |   Dashboard Watermark Status   |
+// # ========================================================================= #
+
+//#region Watermark Status
+f_tbl_pos(string p) =>
+    switch p
+        "Top Right"    => position.top_right
+        "Bottom Right" => position.bottom_right
+        "Bottom Left"  => position.bottom_left
+        "Top Left"     => position.top_left
+        => position.bottom_right
+
+var table info_tbl = table.new(f_tbl_pos(wm_position), 2, 4, bgcolor = color_transparent, border_color = color_transparent)
+
+if wm_show and barstate.islast
+    
+    string active_pairs = ""
+    if enable_s1
+        active_pairs += (active_pairs == "" ? "" : ", ") + s1_name
+    if enable_s2
+        active_pairs += (active_pairs == "" ? "" : ", ") + s2_name
+    if enable_s3
+        active_pairs += (active_pairs == "" ? "" : ", ") + s3_name
+    
+    table.cell(info_tbl, 0, 0, "Mayya Trading", text_color = wm_color, text_size = size.small, text_halign = text.align_right)
+    table.cell(info_tbl, 0, 1, "PSP & SMT Divergence", text_color = wm_color, text_size = size.tiny, text_halign = text.align_right)
+    if active_pairs != ""
+        table.cell(info_tbl, 0, 2, "Pairs: " + active_pairs, text_color = wm_color, text_size = size.tiny, text_halign = text.align_right)
+//#endregion
+
+// # ========================================================================= #
+// # |   Alerts   |
+// # ========================================================================= #
+
+//#region Alerts
+alertcondition(is_smt_bull, "Bullish SMT Divergence", "🟢 Bullish SMT Divergence terdeteksi pada {{ticker}}!")
+alertcondition(is_smt_bear, "Bearish SMT Divergence", "🔴 Bearish SMT Divergence terdeteksi pada {{ticker}}!")
+alertcondition(is_psp_bull, "Bullish PSP Candle",     "🟢 Bullish PSP Candle terdeteksi pada {{ticker}}!")
+alertcondition(is_psp_bear, "Bearish PSP Candle",     "🔴 Bearish PSP Candle terdeteksi pada {{ticker}}!")
+//#endregion

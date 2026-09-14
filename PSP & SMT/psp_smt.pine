@@ -112,9 +112,23 @@ wm_color           = input.color(color.gray, "Warna Teks", group = g_wm)
 // # ========================================================================= #
 
 //#region Data Fetching
-[raw_o1, raw_h1, raw_l1, raw_c1] = enable_s1 ? request.security(sym1, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off) : [open, high, low, close]
-[raw_o2, raw_h2, raw_l2, raw_c2] = enable_s2 ? request.security(sym2, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off) : [open, high, low, close]
-[raw_o3, raw_h3, raw_l3, raw_c3] = enable_s3 ? request.security(sym3, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off) : [open, high, low, close]
+[t_o1, t_h1, t_l1, t_c1] = request.security(enable_s1 ? sym1 : syminfo.tickerid, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off)
+raw_o1 = enable_s1 ? t_o1 : float(na)
+raw_h1 = enable_s1 ? t_h1 : float(na)
+raw_l1 = enable_s1 ? t_l1 : float(na)
+raw_c1 = enable_s1 ? t_c1 : float(na)
+
+[t_o2, t_h2, t_l2, t_c2] = request.security(enable_s2 ? sym2 : syminfo.tickerid, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off)
+raw_o2 = enable_s2 ? t_o2 : float(na)
+raw_h2 = enable_s2 ? t_h2 : float(na)
+raw_l2 = enable_s2 ? t_l2 : float(na)
+raw_c2 = enable_s2 ? t_c2 : float(na)
+
+[t_o3, t_h3, t_l3, t_c3] = request.security(enable_s3 ? sym3 : syminfo.tickerid, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off)
+raw_o3 = enable_s3 ? t_o3 : float(na)
+raw_h3 = enable_s3 ? t_h3 : float(na)
+raw_l3 = enable_s3 ? t_l3 : float(na)
+raw_c3 = enable_s3 ? t_c3 : float(na)
 
 // Handle Inverse transformation
 s1_O = inv1 ? -raw_c1 : raw_o1

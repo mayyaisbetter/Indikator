@@ -4,27 +4,35 @@
 
 indicator("Mayya HTF Candle & Asia Range", shorttitle="Mayya HTF Asia", overlay=true, linktoseries=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
 
-showHTFCandle     = input.bool(true, "Tampilkan HTF Candle", group="Modul HTF Candle")
-showAsiaRange     = input.bool(true, "Tampilkan Asia Range", group="Modul Asia Range")
-showDailyDividers = input.bool(true, "Tampilkan Garis Harian (Daily Dividers)", group="Modul Daily Dividers")
-
 // # ========================================================================= #
-// # |   Colors & Constants   |
+// # |   Global Toggles   |
 // # ========================================================================= #
 
-//#region
-colors_white        = color.white
-colors_black        = color.black
-colors_gray         = color.gray
-color_transparent   = #ffffff00
+showHTFCandle     = input.bool(true, "Tampilkan HTF Candle", group="Modul Utama")
+showAsiaRange     = input.bool(true, "Tampilkan Asia Range", group="Modul Utama")
+showDailyDividers = input.bool(true, "Tampilkan Garis Harian (Daily Dividers)", group="Modul Utama")
+
+// # ========================================================================= #
+// # |   Constants   |
+// # ========================================================================= #
+
+//#region Constants
+color_white       = color.white
+color_black       = color.black
+color_gray        = color.gray
+color_transparent = #ffffff00
+
+border_style_none   = 'None'
+border_style_solid  = '────'
+border_style_dashed = '- - - - - -'
+border_style_dotted = '•••••••••'
 //#endregion
 
 // # ========================================================================= #
 // # |   Inputs   |
 // # ========================================================================= #
 
-//#region
-
+//#region Inputs
 // # General ----------------------------------------------------------------- #
 i_tz                = input.string('(UTC-4) New York', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group='General', tooltip='Pilih zona waktu acuan untuk sesi trading')
 general_font        = input.string("Small Caps", "Text Style", options = ["Small Caps", "Bold Modern", "Default", "Monospace"], inline = "1.0", group = "General", tooltip = "Pilih gaya teks:\n- Small Caps: Huruf kapital mini ala ICT/SMC\n- Bold Modern: Teks tebal sans-serif\n- Default: Sans-serif standar TradingView\n- Monospace: Teks fixed-width terminal")
@@ -41,11 +49,11 @@ wm_font             = input.string("Default", "Gaya Font", options = ["Default",
 wm_bold             = input.bool(true, "Teks Tebal (Bold)", group = g_wm, tooltip = "Mengubah karakter teks menjadi tebal (Bold Mathematical Unicode)")
 wm_title_size       = input.string("Normal", "Ukuran Title", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
 wm_sub_size         = input.string("Small", "Ukuran Subtitle", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
-wm_title_color      = input.color(colors_black, "Warna Title", inline = "wm_col", group = g_wm)
-wm_sub_color        = input.color(colors_gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
+wm_title_color      = input.color(color_black, "Warna Title", inline = "wm_col", group = g_wm)
+wm_sub_color        = input.color(color_gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
 wm_opacity          = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
 
-// # HTF Timeframe Mapping Helper ------------------------------------------- #
+// # Helper: Map TF Input to Resolution ------------------------------------- #
 f_tf_to_res(string tf_str) =>
     switch tf_str
         '15m' => '15'
@@ -61,39 +69,38 @@ f_tf_to_res(string tf_str) =>
         '8h'  => '480'
         '9h'  => '540'
         '12h' => '720'
-        '1D'  => '1D'
-        '1W'  => '1W'
-        '1M'  => '1M'
         => tf_str
 
 // # Timeframes (HTF Candle) ------------------------------------------------- #
-htf_sweeps_tf_1_show   = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
-htf_sweeps_tf_1_input  = input.string("15m", "", inline = "1.0", group = "Timeframes", options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_1_number = input.int(10, "", inline = "1.0", group = "Timeframes", minval = 1, maxval = 10)
+g_tf                   = "Timeframes (HTF Candle)"
+htf_sweeps_tf_1_show   = input.bool(true, "HTF I     ", inline = "1.0", group = g_tf)
+htf_sweeps_tf_1_input  = input.string("15m", "", inline = "1.0", group = g_tf, options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
+htf_sweeps_tf_1_number = input.int(10, "", inline = "1.0", group = g_tf, minval = 1, maxval = 10)
 htf_sweeps_tf_1_tf     = f_tf_to_res(htf_sweeps_tf_1_input)
 
-htf_sweeps_tf_2_show   = input.bool(true, "HTF II    ", inline = "2.0", group = "Timeframes")
-htf_sweeps_tf_2_input  = input.string("1h", "", inline = "2.0", group = "Timeframes", options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_2_number = input.int(8, "", inline = "2.0", group = "Timeframes", minval = 1, maxval = 10)
+htf_sweeps_tf_2_show   = input.bool(true, "HTF II    ", inline = "2.0", group = g_tf)
+htf_sweeps_tf_2_input  = input.string("1h", "", inline = "2.0", group = g_tf, options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
+htf_sweeps_tf_2_number = input.int(8, "", inline = "2.0", group = g_tf, minval = 1, maxval = 10)
 htf_sweeps_tf_2_tf     = f_tf_to_res(htf_sweeps_tf_2_input)
 
-htf_sweeps_tf_3_show   = input.bool(true, "HTF III   ", inline = "3.0", group = "Timeframes")
-htf_sweeps_tf_3_input  = input.string("4h", "", inline = "3.0", group = "Timeframes", options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
-htf_sweeps_tf_3_number = input.int(6, "", inline = "3.0", group = "Timeframes", minval = 1, maxval = 10)
+htf_sweeps_tf_3_show   = input.bool(true, "HTF III   ", inline = "3.0", group = g_tf)
+htf_sweeps_tf_3_input  = input.string("4h", "", inline = "3.0", group = g_tf, options = ['15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
+htf_sweeps_tf_3_number = input.int(6, "", inline = "3.0", group = g_tf, minval = 1, maxval = 10)
 htf_sweeps_tf_3_tf     = f_tf_to_res(htf_sweeps_tf_3_input)
 
 // # HTF Styling ------------------------------------------------------------- #
-htf_sweeps_bull_color        = input.color(colors_white, "Coloring     ", inline = "1.0", group = "HTF")
-htf_sweeps_bear_color        = input.color(colors_black, "", inline = "1.0", group = "HTF")
-htf_sweeps_wick_border_color = input.color(colors_black, "", inline = "1.0", group = "HTF")
-htf_sweeps_offset            = input.int(10, "Offset            ", minval = 1, inline = "2.0", group = "HTF", tooltip = "Jarak candle HTF dari bar terakhir di chart.")
-htf_sweeps_space             = input.int(1, "Space            ", minval = 1, inline = "3.0", maxval = 4, group = "HTF", tooltip = "Jarak antar candle HTF")
-htf_sweeps_candle_width      = input.string("Small", "Size               ", inline = "4.0", group = "HTF", options = ["Tiny", "Small", "Medium", "Large", "Huge"], tooltip = "Ukuran lebar candle HTF")
-htf_sweeps_label_show        = input.bool(true, "Labels   ", inline = "5.0", group = "HTF")
-htf_sweeps_label_size        = input.string("Normal", "", inline = "5.0", group = "HTF", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"])
-htf_sweeps_label_position    = input.string("Top", "Posisi Label", inline = "5.1", group = "HTF", options = ["Both", "Top", "Bottom"], tooltip = "Posisi label/title: Atas (Top), Bawah (Bottom), atau Keduanya (Both)")
-htf_sweeps_label_color       = input.color(colors_black, "Warna Label", inline = "5.1", group = "HTF")
-htf_sweeps_countdown_show    = input.bool(true, "Waktu Mundur Close Candle", group = "HTF", tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
+g_htf                        = "HTF Styling"
+htf_sweeps_bull_color        = input.color(color_white, "Coloring     ", inline = "1.0", group = g_htf)
+htf_sweeps_bear_color        = input.color(color_black, "", inline = "1.0", group = g_htf)
+htf_sweeps_wick_border_color = input.color(color_black, "", inline = "1.0", group = g_htf)
+htf_sweeps_offset            = input.int(10, "Offset            ", minval = 1, inline = "2.0", group = g_htf, tooltip = "Jarak candle HTF dari bar terakhir di chart.")
+htf_sweeps_space             = input.int(1, "Space            ", minval = 1, inline = "3.0", maxval = 4, group = g_htf, tooltip = "Jarak antar candle HTF")
+htf_sweeps_candle_width      = input.string("Small", "Size               ", inline = "4.0", group = g_htf, options = ["Tiny", "Small", "Medium", "Large", "Huge"], tooltip = "Ukuran lebar candle HTF")
+htf_sweeps_label_show        = input.bool(true, "Labels   ", inline = "5.0", group = g_htf)
+htf_sweeps_label_size        = input.string("Normal", "", inline = "5.0", group = g_htf, options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"])
+htf_sweeps_label_position    = input.string("Top", "Posisi Label", inline = "5.1", group = g_htf, options = ["Both", "Top", "Bottom"], tooltip = "Posisi label/title: Atas (Top), Bawah (Bottom), atau Keduanya (Both)")
+htf_sweeps_label_color       = input.color(color_black, "Warna Label", inline = "5.1", group = g_htf)
+htf_sweeps_countdown_show    = input.bool(true, "Waktu Mundur Close Candle", group = g_htf, tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
 
 // # HTF FVG / Gaps Settings ------------------------------------------------- #
 g_fvg                        = "HTF FVG / Gaps"
@@ -110,47 +117,41 @@ g_asia                  = 'Asia Range'
 g_box                   = 'Box Asia'
 g_label                 = 'Label Asia'
 
-option_border_style0    = 'None'
-option_border_style1    = '────'
-option_border_style2    = '- - - - - -'
-option_border_style3    = '•••••••••'
-
 i_history_period        = input.int(10, 'History', minval=1, group=g_asia, tooltip='Berapa sesi Asia terakhir yang ditampilkan di chart')
 i_show                  = i_history_period > 0
-
 i_show_sess1            = input.bool(true, 'Asia ', group=g_asia, inline='session1_1') and i_show
 i_sess1_label           = input.string('Asia', '', group=g_asia, inline='session1_1')
-i_sess1_color           = input.color(colors_gray, '', group=g_asia, inline='session1_1')
+i_sess1_color           = input.color(color_gray, '', group=g_asia, inline='session1_1')
 i_sess1                 = input.session('2000-0000', 'Jam Sesi Asia', group=g_asia, tooltip='Jam sesi Asia (Default 20:00 - 00:00 NY Time)')
 
 i_sess_box_style        = input.string('Box', '', options=['Box', 'Background'], group=g_box, inline='box_style')
-i_sess_border_style_raw = input.string(option_border_style2, '', options=[option_border_style0, option_border_style1, option_border_style2, option_border_style3], group=g_box, inline='box_style')
+i_sess_border_style_raw = input.string(border_style_dashed, '', options=[border_style_none, border_style_solid, border_style_dashed, border_style_dotted], group=g_box, inline='box_style')
 i_sess_border_width     = input.int(1, '', minval=0, group=g_box, inline='box_style')
 i_sess_box_background   = input.bool(true, 'BG color', group=g_box, inline='box_style_options')
 i_sess_bgopacity        = i_sess_box_background ? 94 : 100
 
 i_label_show            = input.bool(true, 'Tampilkan Label', group=g_label, inline='label_show') and i_show
-i_label_size            = str.lower(input.string('Small', '', options=['Auto', 'Tiny', 'Small', 'Normal', 'Large', 'Huge'], inline='label_show', group=g_label))
+i_label_size            = input.string('Small', '', options=['Auto', 'Tiny', 'Small', 'Normal', 'Large', 'Huge'], inline='label_show', group=g_label)
 i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bottom'], inline='label_pos', group=g_label))
 i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g_label))
 
 // # Daily Dividers Settings ------------------------------------------------ #
 g_daily_div             = "Daily Dividers / Garis Harian"
 daily_div_days          = input.int(7, "Jumlah Hari (History)", minval = 1, maxval = 30, group = g_daily_div, tooltip = "Berapa hari terakhir yang ditampilkan (rekomendasi: 7 - 10 hari)")
-daily_div_line_style    = input.string(option_border_style2, "Gaya Garis", options = [option_border_style1, option_border_style2, option_border_style3], inline = "dd_line", group = g_daily_div)
+daily_div_line_style    = input.string(border_style_dashed, "Gaya Garis", options = [border_style_solid, border_style_dashed, border_style_dotted], inline = "dd_line", group = g_daily_div)
 daily_div_line_width    = input.int(1, "Lebar", minval = 1, maxval = 4, inline = "dd_line", group = g_daily_div)
-daily_div_line_color    = input.color(colors_gray, "Warna Garis", inline = "dd_line", group = g_daily_div)
+daily_div_line_color    = input.color(color_gray, "Warna Garis", inline = "dd_line", group = g_daily_div)
 daily_div_label_show    = input.bool(true, "Tampilkan Nama Hari", inline = "dd_lbl", group = g_daily_div)
 daily_div_label_pos     = input.string("Top", "Posisi Teks", options = ["Top", "Bottom", "Middle"], inline = "dd_lbl", group = g_daily_div, tooltip = "Posisi teks nama hari: Di atas harga tertinggi hari, di bawah harga terendah hari, atau di tengah-tengah rentang harga")
 daily_div_label_size    = input.string("Small", "Ukuran Teks", options = ["Tiny", "Small", "Normal", "Large"], inline = "dd_lbl_st", group = g_daily_div)
-daily_div_label_color   = input.color(colors_gray, "Warna Teks", inline = "dd_lbl_st", group = g_daily_div)
+daily_div_label_color   = input.color(color_gray, "Warna Teks", inline = "dd_lbl_st", group = g_daily_div)
 //#endregion
 
 // # ========================================================================= #
 // # |   UDTs & Garbage Collector Bin   |
 // # ========================================================================= #
 
-//#region
+//#region UDTs
 type UDT_Store
     line     [] bin_ln
     box      [] bin_box
@@ -158,27 +159,27 @@ type UDT_Store
     polyline [] bin_polyline
 
 type UDT_HTF_Candle
-    int   num
-    int   index
+    int    num
+    int    index
     string tf
-    float o
-    float c
-    float h
-    float l
-    int   o_idx
-    int   c_idx
-    int   h_idx
-    int   l_idx
-    int   ot
-    int   ct
-    int   candle_left
-    int   candle_right
-    float candle_top
-    float candle_bottom
-    int   wick_x 
-    int   shift
-    bool  is_closed
-    bool  bull
+    float  o
+    float  c
+    float  h
+    float  l
+    int    o_idx
+    int    c_idx
+    int    h_idx
+    int    l_idx
+    int    ot
+    int    ct
+    int    candle_left
+    int    candle_right
+    float  candle_top
+    float  candle_bottom
+    int    wick_x 
+    int    shift
+    bool   is_closed
+    bool   bull
 
 var UDT_Store bin = UDT_Store.new(
     bin_ln       = array.new<line>(),
@@ -201,149 +202,66 @@ method clean_bin(UDT_Store store) =>
     store.bin_box.clear()
     store.bin_lbl.clear()
     store.bin_polyline.clear()
+
+f_clear_boxes(box[] arr) =>
+    for b in arr
+        box.delete(b)
+    arr.clear()
+
+f_clear_labels(label[] arr) =>
+    for l in arr
+        label.delete(l)
+    arr.clear()
+
+f_clear_lines(line[] arr) =>
+    for ln in arr
+        line.delete(ln)
+    arr.clear()
 //#endregion
 
 // # ========================================================================= #
 // # |   Helper Functions & Styling   |
 // # ========================================================================= #
 
-//#region
-method text_size(string size) =>
-    switch size
-        "Tiny"   => size.tiny
-        "Small"  => size.small
-        "Normal" => size.normal
-        "Large"  => size.large
-        "Huge"   => size.huge
-        "Auto"   => size.auto
-        => size.normal
+//#region Helpers
+f_text_size(string s) =>
+    switch str.lower(s)
+        "tiny"   => size.tiny
+        "small"  => size.small
+        "normal" => size.normal
+        "large"  => size.large
+        "huge"   => size.huge
+        "auto"   => size.auto
+        => size.small
 
-method font_style(string font) =>
+f_font_style(string font) =>
     switch font
         'Monospace' => font.family_monospace
         => font.family_default
 
+// Karakter Lookup Efisien (Single-pass parsing dengan 'var' array)
+var string chars_std_bold = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+var string[] chars_bold   = str.split("𝗮,𝗯,𝗰,𝗱,𝗲,𝗳,𝗴,𝗵,𝗶,𝗷,𝗸,𝗹,𝗺,𝗻,𝗼,𝗽,𝗾,𝗿,𝘀,𝘁,𝘂,𝘃,𝘄,𝘅,𝘆,𝘇,𝗔,𝗕,𝗖,𝗗,𝗘,𝗙,𝗚,𝗛,𝗜,𝗝,𝗞,𝗟,𝗠,𝗡,𝗢,𝗣,𝗤,𝗥,𝗦,𝗧,𝗨,𝗩,𝗪,𝗫,𝗬,𝗭,𝟬,𝟭,𝟮,𝟯,𝟰,𝟱,𝟲,𝟳,𝟴,𝟵", ",")
+
+var string chars_std_sc   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+var string[] chars_sc     = str.split("ᴀ,ʙ,ᴄ,ᴅ,ᴇ,ғ,ɢ,ʜ,ɪ,ᴊ,ᴋ,ʟ,ᴍ,ɴ,ᴏ,ᴘ,ǫ,ʀ,ꜱ,ᴛ,ᴜ,ᴠ,ᴡ,x,ʏ,ᴢ,ᴀ,ʙ,ᴄ,ᴅ,ᴇ,ғ,ɢ,ʜ,ɪ,ᴊ,ᴋ,ʟ,ᴍ,ɴ,ᴏ,ᴘ,ǫ,ʀ,ꜱ,ᴛ,ᴜ,ᴠ,ᴡ,x,ʏ,ᴢ", ",")
+
+f_map_chars(string txt, string from_chars, string[] to_chars) =>
+    if txt == ""
+        ""
+    else
+        string[] chars = str.split(txt, "")
+        for i = 0 to chars.size() - 1
+            int pos = str.pos(from_chars, chars.get(i))
+            if not na(pos) and pos >= 0 and pos < to_chars.size()
+                chars.set(i, to_chars.get(pos))
+        str.join(chars, "")
+
 to_bold(string txt) =>
-    string res = txt
-    res := str.replace_all(res, "a", "𝗮")
-    res := str.replace_all(res, "b", "𝗯")
-    res := str.replace_all(res, "c", "𝗰")
-    res := str.replace_all(res, "d", "𝗱")
-    res := str.replace_all(res, "e", "𝗲")
-    res := str.replace_all(res, "f", "𝗳")
-    res := str.replace_all(res, "g", "𝗴")
-    res := str.replace_all(res, "h", "𝗵")
-    res := str.replace_all(res, "i", "𝗶")
-    res := str.replace_all(res, "j", "𝗷")
-    res := str.replace_all(res, "k", "𝗸")
-    res := str.replace_all(res, "l", "𝗹")
-    res := str.replace_all(res, "m", "𝗺")
-    res := str.replace_all(res, "n", "𝗻")
-    res := str.replace_all(res, "o", "𝗼")
-    res := str.replace_all(res, "p", "𝗽")
-    res := str.replace_all(res, "q", "𝗾")
-    res := str.replace_all(res, "r", "𝗿")
-    res := str.replace_all(res, "s", "𝘀")
-    res := str.replace_all(res, "t", "𝘁")
-    res := str.replace_all(res, "u", "𝘂")
-    res := str.replace_all(res, "v", "𝘃")
-    res := str.replace_all(res, "w", "𝘄")
-    res := str.replace_all(res, "x", "𝘅")
-    res := str.replace_all(res, "y", "𝘆")
-    res := str.replace_all(res, "z", "𝘇")
-    res := str.replace_all(res, "A", "𝗔")
-    res := str.replace_all(res, "B", "𝗕")
-    res := str.replace_all(res, "C", "𝗖")
-    res := str.replace_all(res, "D", "𝗗")
-    res := str.replace_all(res, "E", "𝗘")
-    res := str.replace_all(res, "F", "𝗙")
-    res := str.replace_all(res, "G", "𝗚")
-    res := str.replace_all(res, "H", "𝗛")
-    res := str.replace_all(res, "I", "𝗜")
-    res := str.replace_all(res, "J", "𝗝")
-    res := str.replace_all(res, "K", "𝗞")
-    res := str.replace_all(res, "L", "𝗟")
-    res := str.replace_all(res, "M", "𝗠")
-    res := str.replace_all(res, "N", "𝗡")
-    res := str.replace_all(res, "O", "𝗢")
-    res := str.replace_all(res, "P", "𝗣")
-    res := str.replace_all(res, "Q", "𝗤")
-    res := str.replace_all(res, "R", "𝗥")
-    res := str.replace_all(res, "S", "𝗦")
-    res := str.replace_all(res, "T", "𝗧")
-    res := str.replace_all(res, "U", "𝗨")
-    res := str.replace_all(res, "V", "𝗩")
-    res := str.replace_all(res, "W", "𝗪")
-    res := str.replace_all(res, "X", "𝗫")
-    res := str.replace_all(res, "Y", "𝗬")
-    res := str.replace_all(res, "Z", "𝗭")
-    res := str.replace_all(res, "0", "𝟬")
-    res := str.replace_all(res, "1", "𝟭")
-    res := str.replace_all(res, "2", "𝟮")
-    res := str.replace_all(res, "3", "𝟯")
-    res := str.replace_all(res, "4", "𝟰")
-    res := str.replace_all(res, "5", "𝟱")
-    res := str.replace_all(res, "6", "𝟲")
-    res := str.replace_all(res, "7", "𝟳")
-    res := str.replace_all(res, "8", "𝟴")
-    res := str.replace_all(res, "9", "𝟵")
-    res
+    f_map_chars(txt, chars_std_bold, chars_bold)
 
 to_small_caps(string txt) =>
-    string res = txt
-    res := str.replace_all(res, "A", "ᴀ")
-    res := str.replace_all(res, "a", "ᴀ")
-    res := str.replace_all(res, "B", "ʙ")
-    res := str.replace_all(res, "b", "ʙ")
-    res := str.replace_all(res, "C", "ᴄ")
-    res := str.replace_all(res, "c", "ᴄ")
-    res := str.replace_all(res, "D", "ᴅ")
-    res := str.replace_all(res, "d", "ᴅ")
-    res := str.replace_all(res, "E", "ᴇ")
-    res := str.replace_all(res, "e", "ᴇ")
-    res := str.replace_all(res, "F", "ғ")
-    res := str.replace_all(res, "f", "ғ")
-    res := str.replace_all(res, "G", "ɢ")
-    res := str.replace_all(res, "g", "ɢ")
-    res := str.replace_all(res, "H", "ʜ")
-    res := str.replace_all(res, "h", "ʜ")
-    res := str.replace_all(res, "I", "ɪ")
-    res := str.replace_all(res, "i", "ɪ")
-    res := str.replace_all(res, "J", "ᴊ")
-    res := str.replace_all(res, "j", "ᴊ")
-    res := str.replace_all(res, "K", "ᴋ")
-    res := str.replace_all(res, "k", "ᴋ")
-    res := str.replace_all(res, "L", "ʟ")
-    res := str.replace_all(res, "l", "ʟ")
-    res := str.replace_all(res, "M", "ᴍ")
-    res := str.replace_all(res, "m", "ᴍ")
-    res := str.replace_all(res, "N", "ɴ")
-    res := str.replace_all(res, "n", "ɴ")
-    res := str.replace_all(res, "O", "ᴏ")
-    res := str.replace_all(res, "o", "ᴏ")
-    res := str.replace_all(res, "P", "ᴘ")
-    res := str.replace_all(res, "p", "ᴘ")
-    res := str.replace_all(res, "Q", "ǫ")
-    res := str.replace_all(res, "q", "ǫ")
-    res := str.replace_all(res, "R", "ʀ")
-    res := str.replace_all(res, "r", "ʀ")
-    res := str.replace_all(res, "S", "ꜱ")
-    res := str.replace_all(res, "s", "ꜱ")
-    res := str.replace_all(res, "T", "ᴛ")
-    res := str.replace_all(res, "t", "ᴛ")
-    res := str.replace_all(res, "U", "ᴜ")
-    res := str.replace_all(res, "u", "ᴜ")
-    res := str.replace_all(res, "V", "ᴠ")
-    res := str.replace_all(res, "v", "ᴠ")
-    res := str.replace_all(res, "W", "ᴡ")
-    res := str.replace_all(res, "w", "ᴡ")
-    res := str.replace_all(res, "X", "x")
-    res := str.replace_all(res, "x", "x")
-    res := str.replace_all(res, "Y", "ʏ")
-    res := str.replace_all(res, "y", "ʏ")
-    res := str.replace_all(res, "Z", "ᴢ")
-    res := str.replace_all(res, "z", "ᴢ")
-    res
+    f_map_chars(txt, chars_std_sc, chars_sc)
 
 format_text_style(string txt, string style) =>
     switch style
@@ -351,8 +269,8 @@ format_text_style(string txt, string style) =>
         "Small Caps"  => to_small_caps(txt)
         => txt
 
-candle_size(string size) =>
-    switch size
+candle_size(string size_str) =>
+    switch size_str
         'Tiny'   => 2
         'Small'  => 4
         'Medium' => 6
@@ -426,12 +344,12 @@ f_day_name(int dow) =>
         dayofweek.saturday  => "Saturday"
         => ""
 
-session_begins(string tf, string ses, string tz) =>
-    ta.change(time(tf, ses, na(tz) ? "" : tz)) != 0
+session_begins(string tf, string ses, string timezone_val) =>
+    ta.change(time(tf, ses, na(timezone_val) ? "" : timezone_val)) != 0
 
-in_session(string tf, string ses, string tz) =>
-    t  = time(tf, ses, na(tz) ? "" : tz)
-    ct = time_close(tf, ses, na(tz) ? "" : tz)
+in_session(string tf, string ses, string timezone_val) =>
+    t  = time(tf, ses, na(timezone_val) ? "" : timezone_val)
+    ct = time_close(tf, ses, na(timezone_val) ? "" : timezone_val)
     not na(t) and not na(ct)
 
 is_bullish_candle(float c, float o, float h, float l) =>
@@ -439,9 +357,9 @@ is_bullish_candle(float c, float o, float h, float l) =>
 
 f_border_style(string _style) =>
     switch _style
-        option_border_style1 => line.style_solid
-        option_border_style2 => line.style_dashed
-        option_border_style3 => line.style_dotted
+        border_style_solid  => line.style_solid
+        border_style_dashed => line.style_dashed
+        border_style_dotted => line.style_dotted
         => line.style_dashed
 
 f_get_label_position(string _y, string _side) =>
@@ -449,16 +367,6 @@ f_get_label_position(string _y, string _side) =>
         'top'    => _side == 'outside' ? label.style_label_lower_left : label.style_label_upper_left
         'bottom' => _side == 'outside' ? label.style_label_upper_left : label.style_label_lower_left
         => label.style_label_lower_left
-
-f_size_enum(string s) =>
-    switch s
-        'auto'   => size.auto
-        'tiny'   => size.tiny
-        'small'  => size.small
-        'normal' => size.normal
-        'large'  => size.large
-        'huge'   => size.huge
-        => size.small
 
 f_parse_tz(string tz_str) =>
     switch tz_str
@@ -531,13 +439,15 @@ f_parse_tz(string tz_str) =>
         '(UTC+0)'               => 'UTC'
         'UTC'                   => 'UTC'
         => 'UTC'
+
+var string tz = f_parse_tz(i_tz)
 //#endregion
 
 // # ========================================================================= #
 // # |   HTF Candle Logic & Drawing   |
 // # ========================================================================= #
 
-//#region
+//#region HTF Rendering
 method add_htf_candle(array<UDT_HTF_Candle> htf_candles, UDT_HTF_Candle candle, int total_candles_number) =>
     if not na(candle)
         if htf_candles.size() >= total_candles_number
@@ -647,9 +557,9 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
             txt := txt + "\n" + format_text_style(format_countdown(rem), general_font)
 
     if not na(y_top)
-        bin.bin_lbl.push(label.new(x = x, y = y_top, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_down, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
+        bin.bin_lbl.push(label.new(x = x, y = y_top, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_down, textcolor=htf_sweeps_label_color, size=f_text_size(htf_sweeps_label_size), text_font_family=f_font_style(general_font)))
     if not na(y_bottom)
-        bin.bin_lbl.push(label.new(x = x, y = y_bottom, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_up, textcolor=htf_sweeps_label_color, size=text_size(htf_sweeps_label_size), text_font_family=font_style(general_font)))
+        bin.bin_lbl.push(label.new(x = x, y = y_bottom, text = txt, tooltip = str.format("HTF {0}", tf_label(tf)), xloc=xloc.bar_index, color=color_transparent, style=label.style_label_up, textcolor=htf_sweeps_label_color, size=f_text_size(htf_sweeps_label_size), text_font_family=f_font_style(general_font)))
 
     htf_candles
 
@@ -698,13 +608,21 @@ method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf) =>
     if htf_sweeps_label_show and htf_candles.size() > 0
         htf_candles.draw_htf_label(tf)
     htf_candles
+
+f_render_htf(array<UDT_HTF_Candle> candles, string tf, int max_n, bool show, int current_offset, int space, int width) =>
+    int new_offset = current_offset
+    if show
+        candles.position_htf_candles(current_offset, space, width)
+        candles.plot_htf(tf)
+        new_offset += get_htf_candle_shift(0, htf_sweeps_offset, space, width, max_n)
+    new_offset
 //#endregion
 
 // # ========================================================================= #
 // # |   HTF Candle Execution   |
 // # ========================================================================= #
 
-//#region
+//#region HTF Execution
 var htf_1_candles = array.new<UDT_HTF_Candle>()
 var htf_2_candles = array.new<UDT_HTF_Candle>()
 var htf_3_candles = array.new<UDT_HTF_Candle>()
@@ -716,8 +634,6 @@ var bool tf_2_show = htf_sweeps_tf_2_show and timeframe.in_seconds(timeframe.per
 var bool tf_3_show = htf_sweeps_tf_3_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_3_tf)
 
 if showHTFCandle
-    bin.clean_bin()
-    
     if tf_1_show
         htf_1_candles.add_htf_candle(htf_1_candles.detect_htf_candle(htf_sweeps_tf_1_tf), htf_sweeps_tf_1_number)
     if tf_2_show
@@ -725,23 +641,14 @@ if showHTFCandle
     if tf_3_show
         htf_3_candles.add_htf_candle(htf_3_candles.detect_htf_candle(htf_sweeps_tf_3_tf), htf_sweeps_tf_3_number)
     
+    // Render objek visual HANYA saat barstate.islast untuk performa optimal
     if barstate.islast
+        bin.clean_bin()
         int offset = htf_sweeps_offset
-    
-        if tf_1_show
-            htf_1_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
-            htf_1_candles.plot_htf(htf_sweeps_tf_1_tf)
-            offset += get_htf_candle_shift(0, htf_sweeps_offset, htf_sweeps_space, htf_candle_width, htf_sweeps_tf_1_number)
-    
-        if tf_2_show
-            htf_2_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
-            htf_2_candles.plot_htf(htf_sweeps_tf_2_tf)
-            offset += get_htf_candle_shift(0, htf_sweeps_offset, htf_sweeps_space, htf_candle_width, htf_sweeps_tf_2_number)
-        
-        if tf_3_show
-            htf_3_candles.position_htf_candles(offset, htf_sweeps_space, htf_candle_width)
-            htf_3_candles.plot_htf(htf_sweeps_tf_3_tf)
-else
+        offset := f_render_htf(htf_1_candles, htf_sweeps_tf_1_tf, htf_sweeps_tf_1_number, tf_1_show, offset, htf_sweeps_space, htf_candle_width)
+        offset := f_render_htf(htf_2_candles, htf_sweeps_tf_2_tf, htf_sweeps_tf_2_number, tf_2_show, offset, htf_sweeps_space, htf_candle_width)
+        offset := f_render_htf(htf_3_candles, htf_sweeps_tf_3_tf, htf_sweeps_tf_3_number, tf_3_show, offset, htf_sweeps_space, htf_candle_width)
+else if barstate.islast
     bin.clean_bin()
 //#endregion
 
@@ -774,14 +681,14 @@ f_text_halign(string pos) =>
 var table wm_tbl = table.new(position = f_table_pos(wm_position), columns = 1, rows = 2, bgcolor = color.new(color.black, 100), frame_color = color.new(color.black, 100), frame_width = 0, border_color = color.new(color.black, 100), border_width = 0)
 
 if wm_show and barstate.islast
-    text_align_val = f_text_halign(wm_position)
-    title_text     = wm_bold ? to_bold(wm_title) : wm_title
-    sub_text       = (wm_sub_show and wm_bold and wm_subtitle != "") ? to_bold(wm_subtitle) : (wm_sub_show ? wm_subtitle : "")
+    var text_align_val = f_text_halign(wm_position)
+    title_text         = wm_bold ? to_bold(wm_title) : wm_title
+    sub_text           = (wm_sub_show and wm_bold and wm_subtitle != "") ? to_bold(wm_subtitle) : (wm_sub_show ? wm_subtitle : "")
     
-    table.cell(table_id = wm_tbl, column = 0, row = 0, text = title_text, text_color = color.new(wm_title_color, wm_opacity), text_size = text_size(wm_title_size), text_halign = text_align_val, text_font_family = font_style(wm_font))
+    table.cell(table_id = wm_tbl, column = 0, row = 0, text = title_text, text_color = color.new(wm_title_color, wm_opacity), text_size = f_text_size(wm_title_size), text_halign = text_align_val, text_font_family = f_font_style(wm_font))
     
     if wm_sub_show and wm_subtitle != ""
-        table.cell(table_id = wm_tbl, column = 0, row = 1, text = sub_text, text_color = color.new(wm_sub_color, wm_opacity), text_size = text_size(wm_sub_size), text_halign = text_align_val, text_font_family = font_style(wm_font))
+        table.cell(table_id = wm_tbl, column = 0, row = 1, text = sub_text, text_color = color.new(wm_sub_color, wm_opacity), text_size = f_text_size(wm_sub_size), text_halign = text_align_val, text_font_family = f_font_style(wm_font))
     else
         table.cell(table_id = wm_tbl, column = 0, row = 1, text = "", bgcolor = color.new(color.black, 100))
 //#endregion
@@ -791,14 +698,13 @@ if wm_show and barstate.islast
 // # ========================================================================= #
 
 //#region Asia Range
-string tz = f_parse_tz(i_tz)
-
-// Styling Border & Background Box Asia
-bool has_border         = i_sess_box_style != 'Background' and i_sess_border_style_raw != option_border_style0 and i_sess_border_width > 0
-int sess_bw             = has_border ? i_sess_border_width : 0
-color sess_border_color = has_border ? i_sess1_color : color_transparent
-line_style_border       = f_border_style(i_sess_border_style_raw)
-label_position_style    = f_get_label_position(i_label_position_y, i_label_position_s)
+// Inisialisasi properti border & background sekali saat startup (Best Practice)
+var bool has_border         = i_sess_box_style != 'Background' and i_sess_border_style_raw != border_style_none and i_sess_border_width > 0
+var int sess_bw             = has_border ? i_sess_border_width : 0
+var color sess_border_color = has_border ? i_sess1_color : color_transparent
+var line_style_border       = f_border_style(i_sess_border_style_raw)
+var label_position_style    = f_get_label_position(i_label_position_y, i_label_position_s)
+var color box_bg            = i_sess_box_background ? color.new(i_sess1_color, i_sess_bgopacity) : color_transparent
 
 // Timeframe Filter: Hanya tampil di bawah timeframe 1H (< 60 menit / 3600 detik)
 is_ltf_asia = timeframe.isintraday and timeframe.in_seconds() < 3600
@@ -827,7 +733,6 @@ if show_asia
             sess1_low  := low
             last_sess1_box_bar := bar_index
 
-            color box_bg = i_sess_box_background ? color.new(i_sess1_color, i_sess_bgopacity) : color_transparent
             sess1_current_box := box.new(left=bar_index, top=sess1_high, right=bar_index, bottom=sess1_low,
                                          border_color=sess_border_color, border_width=sess_bw,
                                          border_style=line_style_border, bgcolor=box_bg)
@@ -840,8 +745,8 @@ if show_asia
                 string lbl_txt = (not na(i_sess1_label) and i_sess1_label != '') ? format_text_style(i_sess1_label, general_font) : 'Asia'
                 sess1_current_label := label.new(x=bar_index, y=lbl_y, text=lbl_txt,
                                                  textcolor=i_sess1_color, color=color_transparent,
-                                                 size=f_size_enum(i_label_size), style=label_position_style,
-                                                 text_font_family=font_style(general_font))
+                                                 size=f_text_size(i_label_size), style=label_position_style,
+                                                 text_font_family=f_font_style(general_font))
                 array.push(sess1_labels, sess1_current_label)
                 if array.size(sess1_labels) > i_history_period
                     label.delete(array.shift(sess1_labels))
@@ -877,17 +782,11 @@ if show_asia
             box.set_right(sess1_current_box, bar_index)
 else
     // Jika berada di timeframe >= 1H atau dimatikan, bersihkan semua box/label yang tersisa
-    if array.size(sess1_boxes) > 0
-        for i = 0 to array.size(sess1_boxes) - 1
-            box.delete(array.get(sess1_boxes, i))
-        array.clear(sess1_boxes)
-    if array.size(sess1_labels) > 0
-        for i = 0 to array.size(sess1_labels) - 1
-            label.delete(array.get(sess1_labels, i))
-        array.clear(sess1_labels)
-    sess1_current_box := na
+    f_clear_boxes(sess1_boxes)
+    f_clear_labels(sess1_labels)
+    sess1_current_box   := na
     sess1_current_label := na
-    last_sess1_box_bar := -1
+    last_sess1_box_bar  := -1
 
 // Alerts Asia Range
 cross_high = ta.crossover(close, sess1_high)
@@ -923,6 +822,9 @@ var float   day_low           = na
 var label   current_day_label = na
 var int     last_day_bar      = -1
 
+var line_style_div = f_border_style(daily_div_line_style)
+var string dd_lbl_style = (daily_div_label_pos == 'Top') ? label.style_label_down : (daily_div_label_pos == 'Bottom') ? label.style_label_up : label.style_label_center
+
 if show_daily_div
     if is_new_day
         if last_day_bar != bar_index
@@ -936,7 +838,6 @@ if show_daily_div
                 label.set_y(current_day_label, prev_y)
 
             // Buat garis vertikal pembatas hari baru
-            line_style_div = f_border_style(daily_div_line_style)
             line new_div_line = line.new(x1 = bar_index, y1 = low, x2 = bar_index, y2 = high,
                                          extend = extend.both, xloc = xloc.bar_index,
                                          color = daily_div_line_color, style = line_style_div,
@@ -955,11 +856,10 @@ if show_daily_div
             if daily_div_label_show
                 string dname = format_text_style(f_day_name(current_dow), general_font)
                 float init_y = (daily_div_label_pos == 'Top') ? day_high : (daily_div_label_pos == 'Bottom') ? day_low : (day_high + day_low) / 2.0
-                string lbl_style = (daily_div_label_pos == 'Top') ? label.style_label_down : (daily_div_label_pos == 'Bottom') ? label.style_label_up : label.style_label_center
                 current_day_label := label.new(x = bar_index, y = init_y, text = dname,
                                                xloc = xloc.bar_index, color = color_transparent,
-                                               textcolor = daily_div_label_color, size = text_size(daily_div_label_size),
-                                               style = lbl_style, text_font_family = font_style(general_font))
+                                               textcolor = daily_div_label_color, size = f_text_size(daily_div_label_size),
+                                               style = dd_lbl_style, text_font_family = f_font_style(general_font))
                 array.push(daily_labels, current_day_label)
                 if array.size(daily_labels) > daily_div_days
                     label.delete(array.shift(daily_labels))
@@ -982,14 +882,8 @@ if show_daily_div
             label.set_y(current_day_label, curr_y)
 else
     // Bersihkan garis dan label jika timeframe >= 4H atau dimatikan
-    if array.size(daily_lines) > 0
-        for i = 0 to array.size(daily_lines) - 1
-            line.delete(array.get(daily_lines, i))
-        array.clear(daily_lines)
-    if array.size(daily_labels) > 0
-        for i = 0 to array.size(daily_labels) - 1
-            label.delete(array.get(daily_labels, i))
-        array.clear(daily_labels)
+    f_clear_lines(daily_lines)
+    f_clear_labels(daily_labels)
     day_start_bar     := na
     day_high          := na
     day_low           := na

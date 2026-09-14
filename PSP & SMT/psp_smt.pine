@@ -96,16 +96,6 @@ psp_bull_color     = input.color(color_c_green, "Warna Bullish PSP", inline = "p
 psp_bear_color     = input.color(color_c_red,   "Warna Bearish PSP", inline = "psp_col", group = g_psp)
 //#endregion
 
-// # ========================================================================= #
-// # |   Inputs: Watermark / Dashboard Settings   |
-// # ========================================================================= #
-
-//#region Watermark
-g_wm               = "🏷️ Watermark"
-wm_show            = input.bool(true, "Tampilkan Info Status", group = g_wm)
-wm_position        = input.string("Bottom Right", "Posisi", options = ["Top Right", "Bottom Right", "Bottom Left", "Top Left"], group = g_wm)
-wm_color           = input.color(color.gray, "Warna Teks", group = g_wm)
-//#endregion
 
 // # ========================================================================= #
 // # |   Data Hub: Fetch Correlated Pairs (Optimized Bundling)   |
@@ -328,36 +318,6 @@ if is_swing_high
     ph_s3_bval := s3_BH[1]
 //#endregion
 
-// # ========================================================================= #
-// # |   Dashboard Watermark Status   |
-// # ========================================================================= #
-
-//#region Watermark Status
-f_tbl_pos(string p) =>
-    switch p
-        "Top Right"    => position.top_right
-        "Bottom Right" => position.bottom_right
-        "Bottom Left"  => position.bottom_left
-        "Top Left"     => position.top_left
-        => position.bottom_right
-
-var table info_tbl = table.new(f_tbl_pos(wm_position), 2, 4, bgcolor = color_transparent, border_color = color_transparent)
-
-if wm_show and barstate.islast
-    
-    string active_pairs = ""
-    if enable_s1
-        active_pairs += (active_pairs == "" ? "" : ", ") + s1_name
-    if enable_s2
-        active_pairs += (active_pairs == "" ? "" : ", ") + s2_name
-    if enable_s3
-        active_pairs += (active_pairs == "" ? "" : ", ") + s3_name
-    
-    table.cell(info_tbl, 0, 0, "Mayya Trading", text_color = wm_color, text_size = size.small, text_halign = text.align_right)
-    table.cell(info_tbl, 0, 1, "PSP & SMT Divergence", text_color = wm_color, text_size = size.tiny, text_halign = text.align_right)
-    if active_pairs != ""
-        table.cell(info_tbl, 0, 2, "Pairs: " + active_pairs, text_color = wm_color, text_size = size.tiny, text_halign = text.align_right)
-//#endregion
 
 // # ========================================================================= #
 // # |   Alerts   |

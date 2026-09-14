@@ -97,10 +97,10 @@ htf_sweeps_countdown_show    = input.bool(true, "Waktu Mundur Close Candle", gro
 // # HTF FVG / Gaps Settings ------------------------------------------------- #
 g_fvg                        = "HTF FVG / Gaps"
 htf_fvg_show                 = input.bool(true, "Tampilkan FVG / Gaps", group = g_fvg, tooltip = "Tampilkan Fair Value Gap (FVG) pada candle HTF")
-htf_fvg_bull_color           = input.color(color.new(colors_gray, 80), "Bullish FVG", inline = "fvg_col", group = g_fvg)
-htf_fvg_bear_color           = input.color(color.new(colors_gray, 80), "Bearish FVG", inline = "fvg_col", group = g_fvg)
+htf_fvg_bull_color           = input.color(#e4e5e7, "Bullish FVG", inline = "fvg_col", group = g_fvg)
+htf_fvg_bear_color           = input.color(#e4e5e7, "Bearish FVG", inline = "fvg_col", group = g_fvg)
 htf_fvg_border_show          = input.bool(false, "Border FVG", inline = "fvg_b", group = g_fvg)
-htf_fvg_border_color         = input.color(colors_gray, "", inline = "fvg_b", group = g_fvg)
+htf_fvg_border_color         = input.color(#c5c8d0, "", inline = "fvg_b", group = g_fvg)
 htf_fvg_extend               = input.bool(false, "Perpanjang ke Kanan", group = g_fvg, tooltip = "Perpanjang kotak FVG sampai candle HTF terbaru")
 htf_fvg_mitigated            = input.bool(true, "Tampilkan Semua FVG", group = g_fvg, tooltip = "Jika tidak dicentang, hanya FVG yang belum tertutup penuh (unmitigated) yang ditampilkan")
 

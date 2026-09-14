@@ -440,9 +440,9 @@ method add_htf_candle(array<UDT_HTF_Candle> htf_candles, UDT_HTF_Candle candle, 
         htf_candles.unshift(candle)
     htf_candles
 
-method detect_htf_candle(array<UDT_HTF_Candle> htf_candles, string tf) =>
+method detect_htf_candle(array<UDT_HTF_Candle> htf_candles, string tf, bool is_new_bar) =>
     UDT_HTF_Candle htf_candle = na
-    bool is_new = session_begins(tf, "", na) or htf_candles.size() == 0
+    bool is_new = is_new_bar or htf_candles.size() == 0
     if is_new
         UDT_HTF_Candle candle = UDT_HTF_Candle.new(tf = tf)
         candle.o     := open
@@ -597,13 +597,18 @@ var bool tf_1_show = htf_sweeps_tf_1_show and timeframe.in_seconds(timeframe.per
 var bool tf_2_show = htf_sweeps_tf_2_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_2_tf)
 var bool tf_3_show = htf_sweeps_tf_3_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_3_tf)
 
+// Evaluasi perubahan bar HTF pada global scope untuk konsistensi compiler Pine Script
+bool is_new_htf_1 = session_begins(htf_sweeps_tf_1_tf, "", na)
+bool is_new_htf_2 = session_begins(htf_sweeps_tf_2_tf, "", na)
+bool is_new_htf_3 = session_begins(htf_sweeps_tf_3_tf, "", na)
+
 if showHTFCandle
     if tf_1_show
-        htf_1_candles.add_htf_candle(htf_1_candles.detect_htf_candle(htf_sweeps_tf_1_tf), htf_sweeps_tf_1_number)
+        htf_1_candles.add_htf_candle(htf_1_candles.detect_htf_candle(htf_sweeps_tf_1_tf, is_new_htf_1), htf_sweeps_tf_1_number)
     if tf_2_show
-        htf_2_candles.add_htf_candle(htf_2_candles.detect_htf_candle(htf_sweeps_tf_2_tf), htf_sweeps_tf_2_number)
+        htf_2_candles.add_htf_candle(htf_2_candles.detect_htf_candle(htf_sweeps_tf_2_tf, is_new_htf_2), htf_sweeps_tf_2_number)
     if tf_3_show
-        htf_3_candles.add_htf_candle(htf_3_candles.detect_htf_candle(htf_sweeps_tf_3_tf), htf_sweeps_tf_3_number)
+        htf_3_candles.add_htf_candle(htf_3_candles.detect_htf_candle(htf_sweeps_tf_3_tf, is_new_htf_3), htf_sweeps_tf_3_number)
     
     // Render objek visual HANYA saat barstate.islast untuk performa optimal
     if barstate.islast

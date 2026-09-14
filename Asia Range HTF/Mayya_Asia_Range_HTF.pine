@@ -2,9 +2,7 @@
 // ©️ Mayya
 //@version=6
 
-indicator("Mayya HTF Candle & Asia Range", shorttitle="Mayya HTF Asia", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
-import boitoki/AwesomeColor/9 as ac
-import boitoki/Utilities/11 as util
+indicator("Mayya HTF Candle & Asia Range", shorttitle="Mayya HTF Asia", overlay=true, linktoseries=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
 
 showHTFCandle = input.bool(true, "Tampilkan HTF Candle", group="Modul HTF Candle")
 showAsiaRange = input.bool(true, "Tampilkan Asia Range", group="Modul Asia Range")
@@ -1027,7 +1025,7 @@ if wm_show and barstate.islast
 //#endregion
 
 // # ========================================================================= #
-// # |   Modul Sessions   |
+// # |   Modul Asia Range   |
 // # ========================================================================= #
 
 ///////////////
@@ -1037,225 +1035,51 @@ g_asia                  = 'Asia Range'
 g_box                   = 'Box Asia'
 g_label                 = 'Label Asia'
 
-
-//defined
-MAX_BARS                = 500
-
-option_yes              = 'Yes'
-option_no               = '× No'
-option_hide             = '× Hide'
 option_border_style1    = '────'
 option_border_style2    = '- - - - - -'
 option_border_style3    = '•••••••••'
-option_chart_1          = 'Bar color'
-option_chart_2          = 'Candles'
-option_opr_label1       = 'High・Low'
-option_opr_label2       = 'Buy・Sell'
-option_opr_label_none   = 'None'
-option_candle_color1    = 'Session color'
-option_candle_color2    = 'Red • Green'
-
-fmt_price               = '{0,number,#.#####}'
-fmt_pips                = '{0,number,#.#}'
-
-icon_separator          = ' • '
-
-color_text              = color.new(color.white, 0)
-TRANSPARENT             = color.new(color.black, 100)
-
-// Method
-method clear (array<string> id, int _min = 0) =>
-    if array.size(id) > _min
-        array.pop(id)
-
-method clear (array<float> id, int _min = 0) =>
-    if array.size(id) > _min
-        array.pop(id)
-
-// OHLC
-type OHLC
-    float open
-    float high
-    float low
-    float close
-    float hl
-
-// Dot
-type Dot
-    int x
-    float y
-    string t = ''
-    color c
-
-method create(Dot this) =>
-    label.new(this.x, this.y, this.t, style=label.style_label_center, color=TRANSPARENT, textcolor=this.c, size=size.small)
-
-// Candle
-type Candle
-    box[] body
-    line[] wick
-
-method create(Candle this) =>
-    this.body := array.new<box>()
-    this.wick := array.new<line>()
-    this
-
-type State
-    string extend_style
-    bool show_fibs
-    bool show_op
-
-method is_extended (State this) =>
-    this.extend_style != option_no
-
-
-// OpeningRange
-type OpeningRange
-    float top
-    float btm
-    float avg
-    float R1
-    float R2
-    float S1
-    float S2
-    int total_count = 0
-    int reached_count = 0
-    int reached_R1_count = 0
-    int reached_R2_count = 0
-    int reached_S1_count = 0
-    int reached_S2_count = 0
-
-// Data
-type Session
-    string sess
-    string tz
-    string name
-    color colour
-
-    float[] price_ranges
-    float price_range_avg
-    box[] boxes
-    line[] lines
-    label[] labels
-    line[] oclines
-    box[] ocboxes
-    label[] oc_labels
-    box[] opr_boxes
-    line[] opr_lines
-    linefill[] opr_linefills
-    label[] opr_labels
-    line[] fib
-    int session
-    bool is_extended
-    bool in_session
-
-    Candle candle
-    OHLC ohlc
-    State state
-    OpeningRange op
-
-	int value = na // cached session time for this bar
-	int start_bar = 0 // bar_index of the session start
-
-method create (Session this, string _extend, bool _show_fib, bool _show_op) =>
-    this.boxes := array.new<box>()
-    this.lines := array.new<line>()
-    this.labels := array.new<label>()
-    this.oclines := array.new<line>()
-    this.ocboxes := array.new<box>()
-    this.oc_labels := array.new<label>()
-    this.opr_boxes := array.new<box>()
-    this.opr_lines := array.new<line>()
-    this.opr_linefills := array.new<linefill>()
-    this.opr_labels := array.new<label>()
-    this.fib := array.new<line>()
-    this.price_ranges := array.new<float>()
-
-    this.state := State.new(_extend, _show_fib, _show_op)
-    this.candle := Candle.new().create()
-    this.ohlc := OHLC.new()
-    this.op := OpeningRange.new()
-
-    this.is_extended := this.state.is_extended()
-
-    this
-
-method update (Session this) =>
-    t = time(timeframe.period, this.sess, this.tz)
-    this.value := t
-    if not na(t) and na(t[1])
-        this.start_bar := bar_index
-
-method get_bars_from_start(Session this) =>
-    bar_index - this.start_bar + 1
-
-method session (Session this) =>
-    this.value
-
-method add (Session this, range_price, length = 50) =>
-    this.price_ranges.unshift(range_price)
-    this.price_ranges.clear(length)
-    this.price_range_avg := array.avg(this.price_ranges)
-
-    //Function
-f_get_time_by_bar (bar_count) => timeframe.multiplier * bar_count * 60 * 1000
 
 f_border_style (_style) =>
     switch _style
         option_border_style1 => line.style_solid
         option_border_style2 => line.style_dashed
         option_border_style3 => line.style_dotted
-        => _style
+        => line.style_dashed
 
 f_get_label_position (_y, _side) =>
     switch _y
         'top'    => _side == 'outside' ? label.style_label_lower_left : label.style_label_upper_left
         'bottom' => _side == 'outside' ? label.style_label_upper_left : label.style_label_lower_left
+        => label.style_label_lower_left
 
-f_get_started(_session) => na(_session[1]) and bool(_session)
-
-f_get_ended(_session) => na(_session) and bool(_session[1])
-
-f_message_limit_bars (_v) => '⚠️ This box\'s right position exceeds 500 bars(' + str.tostring(_v) + '). This box is not displayed correctly.'
-
-f_set_line_x1 (_line, _x) =>
-    if (line.get_x1(_line) != _x)
-        line.set_x1(_line, _x)
-
-f_set_line_x2 (_line, _x) =>
-    if (line.get_x2(_line) != _x)
-        line.set_x2(_line, _x)
-
-f_set_box_right (_box, _x) =>
-    if box.get_right(_box) != _x
-        box.set_right(_box, _x)
+f_size_enum(string s) =>
+    switch s
+        'auto'   => size.auto
+        'tiny'   => size.tiny
+        'small'  => size.small
+        'normal' => size.normal
+        'large'  => size.large
+        'huge'   => size.huge
+        => size.small
 
 // Timezone & Pengaturan Sesi Asia (Posisi paling atas dengan format nama kota TradingView)
 i_tz                    = input.string('(UTC) UTC', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group=g_asia)
 i_history_period        = input.int(10, 'History', minval=1, group=g_asia, tooltip='Berapa sesi Asia terakhir yang ditampilkan di chart')
 i_show                  = i_history_period > 0
-i_lookback              = 12 * 60
 
 // Sesi Asia Range
 i_show_sess1            = input.bool(true, 'Asia ', group=g_asia, inline='session1_1') and i_show
 i_sess1_label           = input.string('Asia', '', group=g_asia, inline='session1_1')
 i_sess1_color           = input.color(color.gray, '', group=g_asia, inline='session1_1')
 i_sess1                 = input.session('0000-0800', 'Jam Sesi Asia', group=g_asia)
-string i_sess1_extend   = option_no
-bool i_sess1_op         = false
-bool i_sess1_fib        = false
-string i_sess1_chart    = option_no
-bool i_sess1_barcolor   = false
-bool i_sess1_plotcandle = false
 
 // Styling Box
-i_sess_box_style        = input.string('Box', '', options=['Box', 'Background', 'Hamburger', 'Sandwich'], group=g_box, inline='box_style')
+i_sess_box_style        = input.string('Box', '', options=['Box', 'Background'], group=g_box, inline='box_style')
 i_sess_border_style     = f_border_style(input.string(option_border_style2, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g_box, inline='box_style'))
 i_sess_border_width     = input.int(1, '', minval=0, group=g_box, inline='box_style')
 i_sess_box_background   = input.bool(true, 'BG color', group=g_box, inline='box_style_options')
-int session_end_offset  = 0
 i_sess_bgopacity        = i_sess_box_background ? 94 : 100
-i_sess_border_width    := i_sess_box_style == 'Background' ? 0 : i_sess_border_width
+int sess_bw             = i_sess_box_style == 'Background' ? 0 : i_sess_border_width
 
 // Labels
 i_label_show            = input.bool(true, 'Tampilkan Label', group=g_label, inline='label_show') and i_show
@@ -1264,223 +1088,9 @@ i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bot
 i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g_label))
 i_label_position        = f_get_label_position(i_label_position_y, i_label_position_s)
 
-
-// ------------------------
-// Drawing labels
-// ------------------------
-f_render_label (_show, Session data, _is_started, _color, _top, _bottom) =>
-    var label my_label = na
-    var int start_time = na
-    session = data.session()
-
-    v_position_y = (i_label_position_y == 'top') ? _top : _bottom
-    lbl_text = not na(data.name) ? format_text_style(data.name, general_font) : ""
-
-    if _show
-        if _is_started
-            util.clear_labels(data.labels, data.is_extended ? 0 : i_history_period - 1)
-
-            my_label := label.new(bar_index, v_position_y, lbl_text, textcolor=_color, color=TRANSPARENT, size=i_label_size, style=i_label_position, tooltip=data.name, text_font_family=font_style(general_font))
-
-            array.push(data.labels, my_label)
-
-        else if bool(session)
-            label.set_y(my_label, v_position_y)
-            label.set_text(my_label, lbl_text)
-
-    data
-
-// ------------------------
-// Rendering limit message
-// ------------------------
-f_render_limitmessage (_show, Session data, _is_started, _is_ended, _x, _y, _rightbars) =>
-    var label my_note = na
-    session = data.session()
-
-    if _show
-        if _is_started
-            if _rightbars > MAX_BARS
-                my_note := label.new(_x, _y, f_message_limit_bars(_rightbars), style=label.style_label_upper_left, color=color.yellow, textalign=text.align_left, yloc=yloc.price)
-
-        else if  bool(session)
-            if _rightbars > MAX_BARS
-                label.set_y(my_note, _y)
-                label.set_text(my_note, f_message_limit_bars(_rightbars))
-            else
-                label.delete(my_note)
-
-        else if _is_ended
-            label.delete(my_note)
-    data
-
-// Rendering session
-//
-f_render_sessionrange (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2, _is_vertical = false) =>
-    var line above_line = na
-    var line below_line = na
-    session = data.session()
-
-    if _show
-        if _is_started
-            util.clear_lines(data.lines, data.is_extended ? 0 : i_history_period * 2 - 2)
-
-            if _is_vertical
-                above_line := line.new(_x1, _top, _x1, _bottom, width=i_sess_border_width, style=i_sess_border_style, color=_color)
-                below_line := line.new(_x2, _top, _x2, _bottom, width=i_sess_border_width, style=i_sess_border_style, color=_color)
-            else
-                above_line := line.new(_x1, _top,    _x2, _top,    width=i_sess_border_width, style=i_sess_border_style, color=_color)
-                below_line := line.new(_x1, _bottom, _x2, _bottom, width=i_sess_border_width, style=i_sess_border_style, color=_color)
-
-            linefill.new(above_line, below_line, color.new(_color, i_sess_bgopacity))
-
-            array.push(data.lines, above_line)
-            array.push(data.lines, below_line)
-
-
-            if data.is_extended
-                if _is_vertical
-                    line.set_extend(above_line, extend.both)
-                    line.set_extend(below_line, extend.both)
-                else
-                    line.set_extend(above_line, extend.right)
-                    line.set_extend(below_line, extend.right)
-
-        else if bool(session)
-            if _is_vertical
-                line.set_y1(above_line, _bottom)
-                line.set_y2(above_line, _top)
-                line.set_y1(below_line, _bottom)
-                line.set_y2(below_line, _top)
-            else
-                line.set_y1(above_line, _top)
-                line.set_y2(above_line, _top)
-                line.set_x2(above_line, _x2)
-
-                line.set_y1(below_line, _bottom)
-                line.set_y2(below_line, _bottom)
-                line.set_x2(below_line, _x2)
-
-        else if _is_ended
-            if _is_vertical
-                line.set_x1(below_line, _x2-session_end_offset)
-                line.set_x2(below_line, _x2-session_end_offset)
-            else
-                line.set_x2(above_line, _x2-session_end_offset)
-                line.set_x2(below_line, _x2-session_end_offset)
-
-            data.add(_top[1] - _bottom[1], i_history_period)
-
-    data
-
-// ------------------------
-// Rendering session box
-// ------------------------
-f_render_session (_show, Session data, _is_started, _is_ended, _color, _top, _bottom, _x1, _x2) =>
-    var box my_box   = na
-    session = data.session()
-
-    if _show
-        if _is_started
-            util.clear_boxes(data.boxes, data.is_extended ? 0 : i_history_period - 1)
-
-            my_box := box.new(_x1, _top, _x2, _bottom, _color, i_sess_border_width, i_sess_border_style, bgcolor=color.new(_color, i_sess_bgopacity))
-            array.push(data.boxes, my_box)
-
-            if data.is_extended
-                box.set_extend(my_box, extend.right)
-
-        else if bool(session)
-            box.set_top(my_box, _top)
-            box.set_bottom(my_box, _bottom)
-            f_set_box_right(my_box, _x2)
-
-        else if _is_ended
-            box.set_right(my_box, _x2-session_end_offset)
-            data.add(_top[1] - _bottom[1], i_history_period)
-
-    data
-
-
-// ------------------------
-// Drawing market
-// ------------------------
-f_render_main (_show, Session data, _is_started, _is_ended, _color, _top, _bottom) =>
-    var x1 = 0
-    var x2 = 0
-    x2_offset = 1
-    session = data.session()
-
-    x0_1 = ta.valuewhen(na(session[1]) and bool(session), bar_index, 1)
-    x0_2 = ta.valuewhen(na(session) and bool(session[1]), bar_index, 0)
-    x0_d = math.min(math.abs(x0_2 - x0_1), MAX_BARS)
-    rightbars = x0_d
-
-    if _show
-        if _is_started
-            x1 := bar_index
-            x2 := bar_index + x0_d
-
-            data.ohlc.open  := open
-            data.ohlc.high  := _top
-            data.ohlc.low   := _bottom
-            data.ohlc.hl    := _top -_bottom
-            data.in_session := true
-
-        else if  bool(session)
-            true_x2         = x1 + x0_d
-            rightbars      := true_x2 - bar_index
-            max_bars        = bar_index + MAX_BARS
-            x2             := math.min(true_x2, max_bars)
-
-            data.ohlc.high := _top
-            data.ohlc.low  := _bottom
-            data.ohlc.hl   := _top - _bottom
-
-        else if _is_ended
-            data.in_session := false
-            data.ohlc.open := na
-
-    [x1, x2, data.ohlc, rightbars]
-
-
-// ------------------------
-// Drawing
-// ------------------------
-draw (_show, Session data, _extend, _show_fib, _show_op) =>
-    data.update()
-
-    session     = data.session()
-    max         = data.get_bars_from_start()
-
-    top         = ta.highest(high, max)
-    bottom      = ta.lowest(low, max)
-
-    col         = data.colour
-
-    is_started  = f_get_started(session)
-    is_ended    = f_get_ended(session)
-
-    [x1, x2, ohlc, _rightbars] = f_render_main(_show, data, is_started, is_ended, col, top, bottom)
-
-    if i_sess_box_style == 'Box' or i_sess_box_style == 'Background'
-        f_render_session(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
-
-    else if i_sess_box_style == 'Hamburger'
-        f_render_sessionrange(_show, data, is_started, is_ended, col, top, bottom, x1, x2)
-
-    else if i_sess_box_style == 'Sandwich'
-        f_render_sessionrange(_show, data, is_started, is_ended, col, top, bottom, x1, x2, true)
-
-    if i_label_show
-        f_render_label(_show, data, is_started, col, top, bottom)
-
-    f_render_limitmessage(_show, data, is_started, is_ended, x1, bottom, _rightbars)
-
-    [bool(session), ohlc]
-
 /////////////////////
-// Calculating
-///////////////////
+// Timezone Parsing
+/////////////////////
 f_parse_tz(string tz_str) =>
     switch tz_str
         'Exchange' => syminfo.timezone
@@ -1553,27 +1163,98 @@ f_parse_tz(string tz_str) =>
         'UTC' => 'UTC'
         => 'UTC'
 
-string tz = (i_tz == option_no or i_tz == '') ? na : f_parse_tz(i_tz)
+string tz = f_parse_tz(i_tz)
 
-///////////////////
-// Plotting
-///////////////////
-var sess1_data = Session.new(i_sess1, tz, i_sess1_label, i_sess1_color).create(i_sess1_extend, i_sess1_fib, i_sess1_op)
+////////////////////////////////////////////////////////////////////////////////
+// Timeframe Filter: Hanya tampil di bawah timeframe 1H (< 60 menit)
+////////////////////////////////////////////////////////////////////////////////
+is_ltf_asia = timeframe.isintraday and timeframe.in_seconds() < 3600
+show_asia   = showAsiaRange and i_show_sess1 and is_ltf_asia
 
-[is_sess1, sess1_ohlc] = draw(showAsiaRange and i_show_sess1, sess1_data, i_sess1_extend, i_sess1_fib, i_sess1_op)
+////////////////////////////////////////////////////////////////////////////////
+// Deteksi Sesi Asia
+////////////////////////////////////////////////////////////////////////////////
+t_sess1       = time(timeframe.period, i_sess1, tz)
+is_sess1      = not na(t_sess1)
+sess1_started = is_sess1 and na(t_sess1[1])
+sess1_ended   = not is_sess1 and not na(t_sess1[1])
 
+var float sess1_high = na
+var float sess1_low  = na
+var box   sess1_current_box = na
+var label sess1_current_label = na
+
+var box[]   sess1_boxes  = array.new_box()
+var label[] sess1_labels = array.new_label()
+
+if show_asia
+    if sess1_started
+        sess1_high := high
+        sess1_low  := low
+
+        // Buat box baru untuk sesi Asia yang baru buka
+        color box_bg = i_sess_box_background ? color.new(i_sess1_color, i_sess_bgopacity) : color_transparent
+        sess1_current_box := box.new(left=bar_index, top=high, right=bar_index, bottom=low,
+                                     border_color=i_sess1_color, border_width=sess_bw,
+                                     border_style=i_sess_border_style, bgcolor=box_bg)
+        array.push(sess1_boxes, sess1_current_box)
+        if array.size(sess1_boxes) > i_history_period
+            box.delete(array.shift(sess1_boxes))
+
+        // Buat label jika opsi aktif
+        if i_label_show
+            float lbl_y = (i_label_position_y == 'top') ? high : low
+            string lbl_txt = (not na(i_sess1_label) and i_sess1_label != '') ? format_text_style(i_sess1_label, general_font) : 'Asia'
+            sess1_current_label := label.new(x=bar_index, y=lbl_y, text=lbl_txt,
+                                             textcolor=i_sess1_color, color=color_transparent,
+                                             size=f_size_enum(i_label_size), style=i_label_position,
+                                             text_font_family=font_style(general_font))
+            array.push(sess1_labels, sess1_current_label)
+            if array.size(sess1_labels) > i_history_period
+                label.delete(array.shift(sess1_labels))
+
+    else if is_sess1
+        sess1_high := math.max(nz(sess1_high, high), high)
+        sess1_low  := math.min(nz(sess1_low, low), low)
+
+        if not na(sess1_current_box)
+            box.set_top(sess1_current_box, sess1_high)
+            box.set_bottom(sess1_current_box, sess1_low)
+            box.set_right(sess1_current_box, bar_index)
+
+        if not na(sess1_current_label) and i_label_show
+            float lbl_y = (i_label_position_y == 'top') ? sess1_high : sess1_low
+            label.set_y(sess1_current_label, lbl_y)
+
+    else if sess1_ended
+        // Finalisasi posisi kanan box tepat pada candle terakhir sesi Asia
+        if not na(sess1_current_box)
+            box.set_top(sess1_current_box, sess1_high)
+            box.set_bottom(sess1_current_box, sess1_low)
+            box.set_right(sess1_current_box, bar_index - 1)
+else
+    // Jika berada di timeframe >= 1H atau dimatikan, bersihkan semua box/label yang tersisa
+    if array.size(sess1_boxes) > 0
+        for i = 0 to array.size(sess1_boxes) - 1
+            box.delete(array.get(sess1_boxes, i))
+        array.clear(sess1_boxes)
+    if array.size(sess1_labels) > 0
+        for i = 0 to array.size(sess1_labels) - 1
+            label.delete(array.get(sess1_labels, i))
+        array.clear(sess1_labels)
 
 ////////////////////
 // Alerts
 ////////////////////
-// Session alerts
-sess1_started = showAsiaRange and is_sess1 and not is_sess1[1], sess1_ended = showAsiaRange and not is_sess1 and is_sess1[1]
+cross_high = ta.crossover(close, sess1_high)
+cross_low  = ta.crossunder(close, sess1_low)
 
-alertcondition(sess1_started,   'Asia Range started')
-alertcondition(sess1_ended,     'Asia Range ended'  )
+alert_start = show_asia and sess1_started
+alert_end   = show_asia and sess1_ended
 
-alertcondition((not is_sess1) and ta.crossover (close, sess1_ohlc.high), 'Asia Range High crossed (after session closed)')
-alertcondition((not is_sess1) and ta.crossunder(close, sess1_ohlc.low) , 'Asia Range Low crossed (after session closed)' )
-
+alertcondition(alert_start, 'Asia Range started', 'Sesi Asia telah dimulai!')
+alertcondition(alert_end,   'Asia Range ended',   'Sesi Asia telah berakhir!')
+alertcondition(show_asia and not is_sess1 and cross_high, 'Asia Range High crossed (after session closed)', 'Harga menembus Asia Range High!')
+alertcondition(show_asia and not is_sess1 and cross_low,  'Asia Range Low crossed (after session closed)',  'Harga menembus Asia Range Low!')
 
 // ======== End of sessions.pine ========

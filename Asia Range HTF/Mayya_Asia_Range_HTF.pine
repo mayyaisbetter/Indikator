@@ -517,7 +517,7 @@ method draw_htf_candle(UDT_HTF_Candle candle) =>
     bin.bin_ln.push(line.new(x1=candle.wick_x, y1=candle.candle_bottom, x2=candle.wick_x, y2=candle.l, color = htf_sweeps_wick_border_color))
     candle
 
-method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
+method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf, int htf_tc) =>
     float y_top    = na
     float y_bottom = na
     int   x_min    = na
@@ -538,11 +538,11 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
     string txt = format_text_style(tf_label(tf), general_font)
 
     if htf_sweeps_countdown_show
-        int tc     = time_close(tf)
+        int tc     = htf_tc
         int tf_sec = timeframe.in_seconds(tf)
         int tf_ms  = tf_sec * 1000
 
-        // Fallback akurat jika time_close na atau tertinggal (delay <= timenow)
+        // Fallback jika request.security tc na atau tertinggal (delay <= timenow)
         if (na(tc) or tc <= timenow) and tf_ms > 0
             if htf_candles.size() > 0
                 UDT_HTF_Candle curr_candle = htf_candles.get(0)
@@ -602,20 +602,20 @@ method draw_htf_fvg(array<UDT_HTF_Candle> htf_candles) =>
                     bin.bin_box.push(box.new(left = left_x, top = top_y, right = right_x, bottom = bot_y, bgcolor = bg_col, border_color = b_col, border_width = bw))
     htf_candles
 
-method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf) =>
+method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf, int htf_tc) =>
     if htf_fvg_show
         htf_candles.draw_htf_fvg()
     for [index, candle] in htf_candles
         candle.draw_htf_candle()
     if htf_sweeps_label_show and htf_candles.size() > 0
-        htf_candles.draw_htf_label(tf)
+        htf_candles.draw_htf_label(tf, htf_tc)
     htf_candles
 
-f_render_htf(array<UDT_HTF_Candle> candles, string tf, int max_n, bool show, int current_offset, int space, int width) =>
+f_render_htf(array<UDT_HTF_Candle> candles, string tf, int max_n, bool show, int current_offset, int space, int width, int htf_tc) =>
     int new_offset = current_offset
     if show
         candles.position_htf_candles(current_offset, space, width)
-        candles.plot_htf(tf)
+        candles.plot_htf(tf, htf_tc)
         new_offset += get_htf_candle_shift(0, htf_sweeps_offset, space, width, max_n)
     new_offset
 //#endregion
@@ -635,6 +635,10 @@ var bool tf_1_show = htf_sweeps_tf_1_show and timeframe.in_seconds(timeframe.per
 var bool tf_2_show = htf_sweeps_tf_2_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_2_tf)
 var bool tf_3_show = htf_sweeps_tf_3_show and timeframe.in_seconds(timeframe.period) < timeframe.in_seconds(htf_sweeps_tf_3_tf)
 
+int tc_htf_1 = htf_sweeps_countdown_show and tf_1_show ? request.security(syminfo.tickerid, htf_sweeps_tf_1_tf, time_close, lookahead=barmerge.lookahead_on) : na
+int tc_htf_2 = htf_sweeps_countdown_show and tf_2_show ? request.security(syminfo.tickerid, htf_sweeps_tf_2_tf, time_close, lookahead=barmerge.lookahead_on) : na
+int tc_htf_3 = htf_sweeps_countdown_show and tf_3_show ? request.security(syminfo.tickerid, htf_sweeps_tf_3_tf, time_close, lookahead=barmerge.lookahead_on) : na
+
 if showHTFCandle
     if tf_1_show
         htf_1_candles.add_htf_candle(htf_1_candles.detect_htf_candle(htf_sweeps_tf_1_tf), htf_sweeps_tf_1_number)
@@ -647,9 +651,9 @@ if showHTFCandle
     if barstate.islast
         bin.clean_bin()
         int offset = htf_sweeps_offset
-        offset := f_render_htf(htf_1_candles, htf_sweeps_tf_1_tf, htf_sweeps_tf_1_number, tf_1_show, offset, htf_sweeps_space, htf_candle_width)
-        offset := f_render_htf(htf_2_candles, htf_sweeps_tf_2_tf, htf_sweeps_tf_2_number, tf_2_show, offset, htf_sweeps_space, htf_candle_width)
-        offset := f_render_htf(htf_3_candles, htf_sweeps_tf_3_tf, htf_sweeps_tf_3_number, tf_3_show, offset, htf_sweeps_space, htf_candle_width)
+        offset := f_render_htf(htf_1_candles, htf_sweeps_tf_1_tf, htf_sweeps_tf_1_number, tf_1_show, offset, htf_sweeps_space, htf_candle_width, tc_htf_1)
+        offset := f_render_htf(htf_2_candles, htf_sweeps_tf_2_tf, htf_sweeps_tf_2_number, tf_2_show, offset, htf_sweeps_space, htf_candle_width, tc_htf_2)
+        offset := f_render_htf(htf_3_candles, htf_sweeps_tf_3_tf, htf_sweeps_tf_3_number, tf_3_show, offset, htf_sweeps_space, htf_candle_width, tc_htf_3)
 else if barstate.islast
     bin.clean_bin()
 //#endregion

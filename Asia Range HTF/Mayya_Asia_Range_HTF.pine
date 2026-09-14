@@ -955,7 +955,7 @@ if show_daily_div
             if daily_div_label_show
                 string dname = format_text_style(f_day_name(current_dow), general_font)
                 float init_y = (daily_div_label_pos == 'Top') ? day_high : (daily_div_label_pos == 'Bottom') ? day_low : (day_high + day_low) / 2.0
-                label.style lbl_style = (daily_div_label_pos == 'Top') ? label.style_label_down : (daily_div_label_pos == 'Bottom') ? label.style_label_up : label.style_label_center
+                string lbl_style = (daily_div_label_pos == 'Top') ? label.style_label_down : (daily_div_label_pos == 'Bottom') ? label.style_label_up : label.style_label_center
                 current_day_label := label.new(x = bar_index, y = init_y, text = dname,
                                                xloc = xloc.bar_index, color = color_transparent,
                                                textcolor = daily_div_label_color, size = text_size(daily_div_label_size),

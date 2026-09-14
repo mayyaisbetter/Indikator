@@ -2,7 +2,7 @@
 // ©️ Mayya
 //@version=6
 
-indicator("Mayya HTF Candle & Asia Range", shorttitle="Mayya HTF Asia", overlay=true, linktoseries=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
+indicator("HTF Candle & Asia Range [Mayya]", shorttitle="HTF & Asia [Mayya]", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=1000)
 
 // # ========================================================================= #
 // # |   Global Toggles   |
@@ -852,7 +852,9 @@ if show_daily_div
             day_start_bar := bar_index
             day_high      := high
             day_low       := low
-            int current_dow = dayofweek(t_day, tz)
+            int open_hour   = hour(time, tz)
+            int ref_time    = open_hour >= 16 ? time + 43200000 : time
+            int current_dow = dayofweek(ref_time, tz)
 
             // Buat label nama hari
             if daily_div_label_show

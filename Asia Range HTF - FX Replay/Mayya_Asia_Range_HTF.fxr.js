@@ -15,8 +15,8 @@
 // hanya mendeklarasikan method, bukan property user-defined seperti input.showAsia.
 // ----------------------------------------------------------------------------
 var _showAsia        = true;
-var _asiaSession     = '0000-0800';
-var _asiaTz          = 'UTC+0';
+var _asiaSession     = '2000-0000';
+var _asiaTz          = 'UTC-4';
 var _asiaColor       = null;
 var _asiaTransparency= 85;
 var _showMidline     = true;
@@ -51,10 +51,10 @@ init = () => {
   // property dynamic di type 'Input' yang TypeScript tidak mengenalnya.
   // --------------------------------------------------------------------------
   _showAsia         = input.bool('Tampilkan Asia Range', true, 'showAsia', 'Modul Asia Range');
-  _asiaSession      = input.session('Jam Sesi Asia', '0000-0800', 'asiaSession', 'Modul Asia Range');
+  _asiaSession      = input.session('Jam Sesi Asia', '2000-0000', 'asiaSession', 'Modul Asia Range');
   _asiaTz           = input.str(
     'Timezone',
-    'UTC+0',
+    'UTC-4',
     'asiaTz',
     [
       'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5', 'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1',
@@ -230,7 +230,9 @@ function toFxrTimeframe(val) {
   if (str === '2h' || str.includes('2 hour') || str.includes('2 hr') || str === '120') return '2h';
   if (str === '3h' || str.includes('3 hour') || str.includes('3 hr') || str === '180') return '3h';
   if (str === '6h' || str.includes('6 hour') || str.includes('6 hr') || str === '360') return '6h';
+  if (str === '7h' || str.includes('7 hour') || str.includes('7 hr') || str === '420') return '7h';
   if (str === '8h' || str.includes('8 hour') || str.includes('8 hr') || str === '480') return '8h';
+  if (str === '9h' || str.includes('9 hour') || str.includes('9 hr') || str === '540') return '9h';
   if (str === '12h' || str.includes('12 hour') || str.includes('12 hr') || str === '720') return '12h';
 
   // Deteksi hari, minggu, bulan
@@ -239,6 +241,7 @@ function toFxrTimeframe(val) {
   if (str === '1m' || str === 'm' || str.includes('month')) return '1M';
 
   // Deteksi menit
+  if (str === '90m' || str.includes('90 min') || str === '90') return '90m';
   if (str === '15m' || str.includes('15 min') || str === '15') return '15m';
   if (str === '30m' || str.includes('30 min') || str === '30') return '30m';
   if (str === '45m' || str.includes('45 min') || str === '45') return '45m';

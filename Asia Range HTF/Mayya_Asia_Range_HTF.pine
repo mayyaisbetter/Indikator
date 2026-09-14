@@ -71,30 +71,65 @@ wm_sub_color                                = input.color(color.gray, "Warna Sub
 wm_opacity                                  = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
 
 
+f_tf_to_res(string tf_str) =>
+    switch tf_str
+        '1m'  => '1'
+        '3m'  => '3'
+        '5m'  => '5'
+        '15m' => '15'
+        '30m' => '30'
+        '45m' => '45'
+        '1h'  => '60'
+        '90m' => '90'
+        '2h'  => '120'
+        '3h'  => '180'
+        '4h'  => '240'
+        '6h'  => '360'
+        '7h'  => '420'
+        '8h'  => '480'
+        '9h'  => '540'
+        '12h' => '720'
+        '1D'  => '1D'
+        '1W'  => '1W'
+        '1M'  => '1M'
+        => tf_str
+
 htf_sweeps_tf_1_show                        = input.bool(true, "HTF I     ", inline = "1.0", group = "Timeframes")
-htf_sweeps_tf_1_tf                          = input.timeframe("15", "", inline = "1.0", group = "Timeframes")
+htf_sweeps_tf_1_input                       = input.string("15m", "", inline = "1.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
 htf_sweeps_tf_1_number                      = input.int(10, "", inline = "1.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_1_map                         = input.bool(false, "M", inline = "1.0", group = "Timeframes", tooltip = "Map this HTF to LTF")
+htf_sweeps_tf_1_tf                          = f_tf_to_res(htf_sweeps_tf_1_input)
+
 htf_sweeps_tf_2_show                        = input.bool(true, "HTF II    ", inline = "2.0", group = "Timeframes")
-htf_sweeps_tf_2_tf                          = input.timeframe("60", "", inline = "2.0", group = "Timeframes")
+htf_sweeps_tf_2_input                       = input.string("1h", "", inline = "2.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
 htf_sweeps_tf_2_number                      = input.int(8, "", inline = "2.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_2_map                         = input.bool(true, "M", inline = "2.0", group = "Timeframes")
+htf_sweeps_tf_2_tf                          = f_tf_to_res(htf_sweeps_tf_2_input)
+
 htf_sweeps_tf_3_show                        = input.bool(true, "HTF III   ", inline = "3.0", group = "Timeframes")
-htf_sweeps_tf_3_tf                          = input.timeframe("240", "", inline = "3.0", group = "Timeframes")
+htf_sweeps_tf_3_input                       = input.string("4h", "", inline = "3.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
 htf_sweeps_tf_3_number                      = input.int(6, "", inline = "3.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_3_map                         = input.bool(false, "M", inline = "3.0", group = "Timeframes")
+htf_sweeps_tf_3_tf                          = f_tf_to_res(htf_sweeps_tf_3_input)
+
 htf_sweeps_tf_4_show                        = input.bool(true, "HTF IV   ", inline = "4.0", group = "Timeframes")
-htf_sweeps_tf_4_tf                          = input.timeframe("1D", "", inline = "4.0", group = "Timeframes")
+htf_sweeps_tf_4_input                       = input.string("1D", "", inline = "4.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
 htf_sweeps_tf_4_number                      = input.int(4, "", inline = "4.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_4_map                         = input.bool(false, "M", inline = "4.0", group = "Timeframes")
+htf_sweeps_tf_4_tf                          = f_tf_to_res(htf_sweeps_tf_4_input)
+
 htf_sweeps_tf_5_show                        = input.bool(true, "HTF V    ", inline = "5.0", group = "Timeframes")
-htf_sweeps_tf_5_tf                          = input.timeframe("1W", "", inline = "5.0", group = "Timeframes")
+htf_sweeps_tf_5_input                       = input.string("1W", "", inline = "5.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
 htf_sweeps_tf_5_number                      = input.int(2, "", inline = "5.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_5_map                         = input.bool(false, "M", inline = "5.0", group = "Timeframes")
+htf_sweeps_tf_5_tf                          = f_tf_to_res(htf_sweeps_tf_5_input)
+
 htf_sweeps_tf_6_show                        = input.bool(false, "HTF VI   ", inline = "6.0", group = "Timeframes")
-htf_sweeps_tf_6_tf                          = input.timeframe("1M", "", inline = "6.0", group = "Timeframes")
+htf_sweeps_tf_6_input                       = input.string("1M", "", inline = "6.0", group = "Timeframes", options = ['1m', '3m', '5m', '15m', '30m', '45m', '1h', '90m', '2h', '3h', '4h', '6h', '7h', '8h', '9h', '12h', '1D', '1W', '1M'])
 htf_sweeps_tf_6_number                      = input.int(1, "", inline = "6.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_6_map                         = input.bool(false, "M", inline = "6.0", group = "Timeframes")
+htf_sweeps_tf_6_tf                          = f_tf_to_res(htf_sweeps_tf_6_input)
+
 
 htf_sweeps_bull_color                       = input.color(colors_white, "Coloring     ", inline = "1.0", group = "HTF")
 htf_sweeps_bear_color                       = input.color(colors_black, "", inline = "1.0", group = "HTF")
@@ -454,12 +489,30 @@ method tf_label(string tf) =>
         '30'    => '30m'
         '45'    => '45m'
         '60'    => '1H'
+        '90'    => '90m'
         '120'   => '2H'
         '180'   => '3H'
         '240'   => '4H'
+        '360'   => '6H'
+        '420'   => '7H'
         '480'   => '8H'
         '540'   => '9H'
         '720'   => '12H'
+        'D'     => '1D'
+        '1D'    => '1D'
+        'W'     => '1W'
+        '1W'    => '1W'
+        'M'     => '1M'
+        '1M'    => '1M'
+        '1h'    => '1H'
+        '2h'    => '2H'
+        '3h'    => '3H'
+        '4h'    => '4H'
+        '6h'    => '6H'
+        '7h'    => '7H'
+        '8h'    => '8H'
+        '9h'    => '9H'
+        '12h'   => '12H'
         => tfl
     out
 
@@ -1063,15 +1116,15 @@ f_size_enum(string s) =>
         => size.small
 
 // Timezone & Pengaturan Sesi Asia (Posisi paling atas dengan format nama kota TradingView)
-i_tz                    = input.string('(UTC) UTC', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group=g_asia)
+i_tz                    = input.string('(UTC-4) New York', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group=g_asia)
 i_history_period        = input.int(10, 'History', minval=1, group=g_asia, tooltip='Berapa sesi Asia terakhir yang ditampilkan di chart')
 i_show                  = i_history_period > 0
 
-// Sesi Asia Range
+// Sesi Asia Range (Default 20:00 - 00:00 NY Time)
 i_show_sess1            = input.bool(true, 'Asia ', group=g_asia, inline='session1_1') and i_show
 i_sess1_label           = input.string('Asia', '', group=g_asia, inline='session1_1')
 i_sess1_color           = input.color(color.gray, '', group=g_asia, inline='session1_1')
-i_sess1                 = input.session('0000-0800', 'Jam Sesi Asia', group=g_asia)
+i_sess1                 = input.session('2000-0000', 'Jam Sesi Asia', group=g_asia, tooltip='Jam sesi Asia (Default 20:00 - 00:00 NY Time)')
 
 // Styling Box
 i_sess_box_style        = input.string('Box', '', options=['Box', 'Background'], group=g_box, inline='box_style')
@@ -1176,42 +1229,56 @@ show_asia   = showAsiaRange and i_show_sess1 and is_ltf_asia
 ////////////////////////////////////////////////////////////////////////////////
 t_sess1       = time(timeframe.period, i_sess1, tz)
 is_sess1      = not na(t_sess1)
-sess1_started = is_sess1 and na(t_sess1[1])
-sess1_ended   = not is_sess1 and not na(t_sess1[1])
+sess1_started = is_sess1 and not is_sess1[1]
+sess1_ended   = not is_sess1 and is_sess1[1]
 
 var float sess1_high = na
 var float sess1_low  = na
 var box   sess1_current_box = na
 var label sess1_current_label = na
+var int   last_sess1_box_bar = -1
 
 var box[]   sess1_boxes  = array.new_box()
 var label[] sess1_labels = array.new_label()
 
 if show_asia
     if sess1_started
-        sess1_high := high
-        sess1_low  := low
+        // Pastikan hanya membuat 1 box baru per bar pembuka sesi (aman untuk realtime ticks)
+        if last_sess1_box_bar != bar_index
+            sess1_high := high
+            sess1_low  := low
+            last_sess1_box_bar := bar_index
 
-        // Buat box baru untuk sesi Asia yang baru buka
-        color box_bg = i_sess_box_background ? color.new(i_sess1_color, i_sess_bgopacity) : color_transparent
-        sess1_current_box := box.new(left=bar_index, top=high, right=bar_index, bottom=low,
-                                     border_color=i_sess1_color, border_width=sess_bw,
-                                     border_style=i_sess_border_style, bgcolor=box_bg)
-        array.push(sess1_boxes, sess1_current_box)
-        if array.size(sess1_boxes) > i_history_period
-            box.delete(array.shift(sess1_boxes))
+            // Buat box baru untuk sesi Asia yang baru buka
+            color box_bg = i_sess_box_background ? color.new(i_sess1_color, i_sess_bgopacity) : color_transparent
+            sess1_current_box := box.new(left=bar_index, top=sess1_high, right=bar_index, bottom=sess1_low,
+                                         border_color=i_sess1_color, border_width=sess_bw,
+                                         border_style=i_sess_border_style, bgcolor=box_bg)
+            array.push(sess1_boxes, sess1_current_box)
+            if array.size(sess1_boxes) > i_history_period
+                box.delete(array.shift(sess1_boxes))
 
-        // Buat label jika opsi aktif
-        if i_label_show
-            float lbl_y = (i_label_position_y == 'top') ? high : low
-            string lbl_txt = (not na(i_sess1_label) and i_sess1_label != '') ? format_text_style(i_sess1_label, general_font) : 'Asia'
-            sess1_current_label := label.new(x=bar_index, y=lbl_y, text=lbl_txt,
-                                             textcolor=i_sess1_color, color=color_transparent,
-                                             size=f_size_enum(i_label_size), style=i_label_position,
-                                             text_font_family=font_style(general_font))
-            array.push(sess1_labels, sess1_current_label)
-            if array.size(sess1_labels) > i_history_period
-                label.delete(array.shift(sess1_labels))
+            // Buat label jika opsi aktif
+            if i_label_show
+                float lbl_y = (i_label_position_y == 'top') ? sess1_high : sess1_low
+                string lbl_txt = (not na(i_sess1_label) and i_sess1_label != '') ? format_text_style(i_sess1_label, general_font) : 'Asia'
+                sess1_current_label := label.new(x=bar_index, y=lbl_y, text=lbl_txt,
+                                                 textcolor=i_sess1_color, color=color_transparent,
+                                                 size=f_size_enum(i_label_size), style=i_label_position,
+                                                 text_font_family=font_style(general_font))
+                array.push(sess1_labels, sess1_current_label)
+                if array.size(sess1_labels) > i_history_period
+                    label.delete(array.shift(sess1_labels))
+        else
+            // Update realtime tick pada candle pembuka yang sama
+            sess1_high := math.max(sess1_high, high)
+            sess1_low  := math.min(sess1_low, low)
+            if not na(sess1_current_box)
+                box.set_top(sess1_current_box, sess1_high)
+                box.set_bottom(sess1_current_box, sess1_low)
+            if not na(sess1_current_label) and i_label_show
+                float lbl_y = (i_label_position_y == 'top') ? sess1_high : sess1_low
+                label.set_y(sess1_current_label, lbl_y)
 
     else if is_sess1
         sess1_high := math.max(nz(sess1_high, high), high)
@@ -1242,6 +1309,9 @@ else
         for i = 0 to array.size(sess1_labels) - 1
             label.delete(array.get(sess1_labels, i))
         array.clear(sess1_labels)
+    sess1_current_box := na
+    sess1_current_label := na
+    last_sess1_box_bar := -1
 
 ////////////////////
 // Alerts

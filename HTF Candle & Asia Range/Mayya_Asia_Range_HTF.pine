@@ -137,7 +137,7 @@ i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside
 // # Daily Dividers Settings ------------------------------------------------ #
 g_daily_div             = "Daily Dividers / Garis Harian"
 daily_div_days          = input.int(7, "Jumlah Hari (History)", minval = 1, maxval = 30, group = g_daily_div, tooltip = "Berapa hari terakhir yang ditampilkan (rekomendasi: 7 - 10 hari)")
-daily_div_line_style    = input.string(border_style_dashed, "Gaya Garis", options = [border_style_solid, border_style_dashed, border_style_dotted], inline = "dd_line", group = g_daily_div)
+daily_div_line_style    = input.string(border_style_dashed, "Gaya Garis", options = [border_style_none, border_style_solid, border_style_dashed, border_style_dotted], inline = "dd_line", group = g_daily_div)
 daily_div_line_width    = input.int(1, "Lebar", minval = 1, maxval = 4, inline = "dd_line", group = g_daily_div)
 daily_div_line_color    = input.color(color_gray, "Warna Garis", inline = "dd_line", group = g_daily_div)
 daily_div_label_show    = input.bool(true, "Tampilkan Nama Hari", inline = "dd_lbl", group = g_daily_div)
@@ -806,14 +806,15 @@ if show_daily_div
                 float prev_y = (daily_div_label_pos == 'Top') ? day_high : (daily_div_label_pos == 'Bottom') ? day_low : (day_high + day_low) / 2.0
                 label.set_y(current_day_label, prev_y)
 
-            // Buat garis vertikal pembatas hari baru
-            line new_div_line = line.new(x1 = bar_index, y1 = low, x2 = bar_index, y2 = high,
-                                         extend = extend.both, xloc = xloc.bar_index,
-                                         color = daily_div_line_color, style = line_style_div,
-                                         width = daily_div_line_width)
-            array.push(daily_lines, new_div_line)
-            if array.size(daily_lines) > daily_div_days
-                line.delete(array.shift(daily_lines))
+            // Buat garis vertikal pembatas hari baru jika bukan 'None'
+            if daily_div_line_style != border_style_none
+                line new_div_line = line.new(x1 = bar_index, y1 = low, x2 = bar_index, y2 = high,
+                                             extend = extend.both, xloc = xloc.bar_index,
+                                             color = daily_div_line_color, style = line_style_div,
+                                             width = daily_div_line_width)
+                array.push(daily_lines, new_div_line)
+                if array.size(daily_lines) > daily_div_days
+                    line.delete(array.shift(daily_lines))
 
             // Inisialisasi metrik hari baru
             day_start_bar := bar_index

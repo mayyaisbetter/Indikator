@@ -1033,14 +1033,9 @@ if wm_show and barstate.islast
 ///////////////
 // Groups
 ///////////////
-g0                      = '// GENERAL //'
-g1_01                   = '// ASIA RANGE //'
-g4                      = '// BOX //'
-g6                      = '// LABELS //'
-g5                      = '// OPENING RANGE //'
-g7                      = '// FIBONACCI LEVELS //'
-g8                      = '// OPTIONS //'
-g11                     = '// CANDLE //'
+g_asia                  = 'Asia Range'
+g_box                   = 'Box Asia'
+g_label                 = 'Label Asia'
 
 
 //defined
@@ -1235,17 +1230,17 @@ f_set_box_right (_box, _x) =>
     if box.get_right(_box) != _x
         box.set_right(_box, _x)
 
-// Timezone
-i_tz                    = input.string('UTC+0', title='Timezone', options=['UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5', 'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1', 'UTC+0', 'UTC+1', 'UTC+2', 'UTC+3', 'UTC+4', 'UTC+5', 'UTC+6', 'UTC+7', 'UTC+8', 'UTC+9', 'UTC+10', 'UTC+11', 'UTC+12', 'GMT-11', 'GMT-10', 'GMT-9', 'GMT-8', 'GMT-7', 'GMT-6', 'GMT-5', 'GMT-4', 'GMT-3', 'GMT-2', 'GMT-1', 'GMT+0', 'GMT+1', 'GMT+2', 'GMT+3', 'GMT+330', 'GMT+4', 'GMT+430', 'GMT+5', 'GMT+530', 'GMT+6', 'GMT+7', 'GMT+8', 'GMT+9', 'GMT+10', 'GMT+11', 'GMT+12'], group=g0)
-i_history_period        = input.int(10, 'History', minval=1, group=g0)
+// Timezone & Pengaturan Sesi Asia (Posisi paling atas dengan format nama kota TradingView)
+i_tz                    = input.string('(UTC) UTC', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group=g_asia)
+i_history_period        = input.int(10, 'History', minval=1, group=g_asia, tooltip='Berapa sesi Asia terakhir yang ditampilkan di chart')
 i_show                  = i_history_period > 0
 i_lookback              = 12 * 60
 
-// Sessions
-i_show_sess1            = input.bool(true, 'Asia ', group=g1_01, inline='session1_1') and i_show
-i_sess1_label           = input.string('Asia', '', group=g1_01, inline='session1_1')
-i_sess1_color           = input.color(color.gray, '', group=g1_01, inline='session1_1')
-i_sess1                 = input.session('0000-0800', 'Jam Sesi Asia', group=g1_01)
+// Sesi Asia Range
+i_show_sess1            = input.bool(true, 'Asia ', group=g_asia, inline='session1_1') and i_show
+i_sess1_label           = input.string('Asia', '', group=g_asia, inline='session1_1')
+i_sess1_color           = input.color(color.gray, '', group=g_asia, inline='session1_1')
+i_sess1                 = input.session('0000-0800', 'Jam Sesi Asia', group=g_asia)
 string i_sess1_extend   = option_no
 bool i_sess1_op         = false
 bool i_sess1_fib        = false
@@ -1253,20 +1248,20 @@ string i_sess1_chart    = option_no
 bool i_sess1_barcolor   = false
 bool i_sess1_plotcandle = false
 
-// Show & Styles
-i_sess_box_style        = input.string('Box', '', options=['Box', 'Background', 'Hamburger', 'Sandwich'], group=g4, inline='box_style')
-i_sess_border_style     = f_border_style(input.string(option_border_style2, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g4, inline='box_style'))
-i_sess_border_width     = input.int(1, '', minval=0, group=g4, inline='box_style')
-i_sess_box_background   = input.bool(true, 'BG color', group=g4, inline='box_style_options')
+// Styling Box
+i_sess_box_style        = input.string('Box', '', options=['Box', 'Background', 'Hamburger', 'Sandwich'], group=g_box, inline='box_style')
+i_sess_border_style     = f_border_style(input.string(option_border_style2, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g_box, inline='box_style'))
+i_sess_border_width     = input.int(1, '', minval=0, group=g_box, inline='box_style')
+i_sess_box_background   = input.bool(true, 'BG color', group=g_box, inline='box_style_options')
 int session_end_offset  = 0
 i_sess_bgopacity        = i_sess_box_background ? 94 : 100
 i_sess_border_width    := i_sess_box_style == 'Background' ? 0 : i_sess_border_width
 
 // Labels
-i_label_show            = input.bool(true, 'Tampilkan Label', group=g6, inline='label_show') and i_show
-i_label_size            = str.lower(input.string('Small', '', options=['Auto', 'Tiny', 'Small', 'Normal', 'Large', 'Huge'], inline='label_show', group=g6))
-i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bottom'], inline='label_pos', group=g6))
-i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g6))
+i_label_show            = input.bool(true, 'Tampilkan Label', group=g_label, inline='label_show') and i_show
+i_label_size            = str.lower(input.string('Small', '', options=['Auto', 'Tiny', 'Small', 'Normal', 'Large', 'Huge'], inline='label_show', group=g_label))
+i_label_position_y      = str.lower(input.string('Top', '', options=['Top', 'Bottom'], inline='label_pos', group=g_label))
+i_label_position_s      = str.lower(input.string('Outside', '', options=['Inside', 'Outside'], inline='label_pos', group=g_label))
 i_label_position        = f_get_label_position(i_label_position_y, i_label_position_s)
 
 
@@ -1486,7 +1481,79 @@ draw (_show, Session data, _extend, _show_fib, _show_op) =>
 /////////////////////
 // Calculating
 ///////////////////
-string tz = (i_tz == option_no or i_tz == '') ? na : i_tz
+f_parse_tz(string tz_str) =>
+    switch tz_str
+        'Exchange' => syminfo.timezone
+        '(UTC-10) Honolulu' => 'Pacific/Honolulu'
+        '(UTC-8) Anchorage' => 'America/Anchorage'
+        '(UTC-8) Juneau' => 'America/Juneau'
+        '(UTC-7) Los Angeles' => 'America/Los_Angeles'
+        '(UTC-7) Phoenix' => 'America/Phoenix'
+        '(UTC-7) Vancouver' => 'America/Vancouver'
+        '(UTC-6) Denver' => 'America/Denver'
+        '(UTC-6) Mexico City' => 'America/Mexico_City'
+        '(UTC-6) San Salvador' => 'America/El_Salvador'
+        '(UTC-5) Bogota' => 'America/Bogota'
+        '(UTC-5) Chicago' => 'America/Chicago'
+        '(UTC-5) Lima' => 'America/Lima'
+        '(UTC-4) Caracas' => 'America/Caracas'
+        '(UTC-4) New York' => 'America/New_York'
+        '(UTC-4) Toronto' => 'America/Toronto'
+        '(UTC-3) Buenos Aires' => 'America/Argentina/Buenos_Aires'
+        '(UTC-3) Halifax' => 'America/Halifax'
+        '(UTC-3) Santiago' => 'America/Santiago'
+        '(UTC-3) Sao Paulo' => 'America/Sao_Paulo'
+        '(UTC) Azores' => 'Atlantic/Azores'
+        '(UTC) Reykjavik' => 'Atlantic/Reykjavik'
+        '(UTC) UTC' => 'UTC'
+        '(UTC+1) Casablanca' => 'Africa/Casablanca'
+        '(UTC+1) Dublin' => 'Europe/Dublin'
+        '(UTC+1) Lagos' => 'Africa/Lagos'
+        '(UTC+1) Lisbon' => 'Europe/Lisbon'
+        '(UTC+1) London' => 'Europe/London'
+        '(UTC+1) Tunis' => 'Africa/Tunis'
+        '(UTC+2) Athens' => 'Europe/Athens'
+        '(UTC+2) Cairo' => 'Africa/Cairo'
+        '(UTC+2) Helsinki' => 'Europe/Helsinki'
+        '(UTC+2) Jerusalem' => 'Asia/Jerusalem'
+        '(UTC+2) Johannesburg' => 'Africa/Johannesburg'
+        '(UTC+3) Bahrain' => 'Asia/Bahrain'
+        '(UTC+3) Istanbul' => 'Europe/Istanbul'
+        '(UTC+3) Kuwait' => 'Asia/Kuwait'
+        '(UTC+3) Moscow' => 'Europe/Moscow'
+        '(UTC+3) Qatar' => 'Asia/Qatar'
+        '(UTC+3) Riyadh' => 'Asia/Riyadh'
+        '(UTC+3:30) Tehran' => 'Asia/Tehran'
+        '(UTC+4) Dubai' => 'Asia/Dubai'
+        '(UTC+4) Muscat' => 'Asia/Muscat'
+        '(UTC+5) Ashgabat' => 'Asia/Ashgabat'
+        '(UTC+5) Karachi' => 'Asia/Karachi'
+        '(UTC+5) Tashkent' => 'Asia/Tashkent'
+        '(UTC+5:30) Kolkata' => 'Asia/Kolkata'
+        '(UTC+5:45) Kathmandu' => 'Asia/Kathmandu'
+        '(UTC+6) Almaty' => 'Asia/Almaty'
+        '(UTC+7) Bangkok' => 'Asia/Bangkok'
+        '(UTC+7) Jakarta' => 'Asia/Jakarta'
+        '(UTC+7) Ho Chi Minh' => 'Asia/Ho_Chi_Minh'
+        '(UTC+8) Hong Kong' => 'Asia/Hong_Kong'
+        '(UTC+8) Kuala Lumpur' => 'Asia/Kuala_Lumpur'
+        '(UTC+8) Manila' => 'Asia/Manila'
+        '(UTC+8) Shanghai' => 'Asia/Shanghai'
+        '(UTC+8) Singapore' => 'Asia/Singapore'
+        '(UTC+8) Taipei' => 'Asia/Taipei'
+        '(UTC+9) Seoul' => 'Asia/Seoul'
+        '(UTC+9) Tokyo' => 'Asia/Tokyo'
+        '(UTC+9:30) Adelaide' => 'Australia/Adelaide'
+        '(UTC+10) Brisbane' => 'Australia/Brisbane'
+        '(UTC+10) Sydney' => 'Australia/Sydney'
+        '(UTC+11) Noumea' => 'Pacific/Noumea'
+        '(UTC+12) Auckland' => 'Pacific/Auckland'
+        '(UTC+12) Fiji' => 'Pacific/Fiji'
+        'UTC+0' => 'UTC'
+        'UTC' => 'UTC'
+        => 'UTC'
+
+string tz = (i_tz == option_no or i_tz == '') ? na : f_parse_tz(i_tz)
 
 ///////////////////
 // Plotting

@@ -94,6 +94,16 @@ htf_sweeps_label_position    = input.string("Top", "Posisi Label", inline = "5.1
 htf_sweeps_label_color       = input.color(colors_black, "Warna Label", inline = "5.1", group = "HTF")
 htf_sweeps_countdown_show    = input.bool(true, "Waktu Mundur Close Candle", group = "HTF", tooltip = "Tampilkan hitung mundur waktu close candle di bawah title")
 
+// # HTF FVG / Gaps Settings ------------------------------------------------- #
+g_fvg                        = "HTF FVG / Gaps"
+htf_fvg_show                 = input.bool(true, "Tampilkan FVG / Gaps", group = g_fvg, tooltip = "Tampilkan Fair Value Gap (FVG) pada candle HTF")
+htf_fvg_bull_color           = input.color(color.new(colors_gray, 80), "Bullish FVG", inline = "fvg_col", group = g_fvg)
+htf_fvg_bear_color           = input.color(color.new(colors_gray, 80), "Bearish FVG", inline = "fvg_col", group = g_fvg)
+htf_fvg_border_show          = input.bool(false, "Border FVG", inline = "fvg_b", group = g_fvg)
+htf_fvg_border_color         = input.color(colors_gray, "", inline = "fvg_b", group = g_fvg)
+htf_fvg_extend               = input.bool(false, "Perpanjang ke Kanan", group = g_fvg, tooltip = "Perpanjang kotak FVG sampai candle HTF terbaru")
+htf_fvg_mitigated            = input.bool(true, "Tampilkan Semua FVG", group = g_fvg, tooltip = "Jika tidak dicentang, hanya FVG yang belum tertutup penuh (unmitigated) yang ditampilkan")
+
 // # Asia Range Settings ---------------------------------------------------- #
 g_asia                  = 'Asia Range'
 g_box                   = 'Box Asia'
@@ -620,7 +630,46 @@ method draw_htf_label(array<UDT_HTF_Candle> htf_candles, string tf) =>
 
     htf_candles
 
+method draw_htf_fvg(array<UDT_HTF_Candle> htf_candles) =>
+    if htf_fvg_show and htf_candles.size() >= 3
+        int count = htf_candles.size()
+        // Iterasi dari candle tertua ke terdekat (dari count - 2 down to 1)
+        for i = count - 2 to 1
+            UDT_HTF_Candle c1 = htf_candles.get(i + 1)
+            UDT_HTF_Candle c2 = htf_candles.get(i)
+            UDT_HTF_Candle c3 = htf_candles.get(i - 1)
+
+            bool is_bull_fvg = c3.l > c1.h
+            bool is_bear_fvg = c3.h < c1.l
+
+            if is_bull_fvg or is_bear_fvg
+                float top_y = is_bull_fvg ? c3.l : c1.l
+                float bot_y = is_bull_fvg ? c1.h : c3.h
+
+                // Cek mitigasi jika opsi hanya unmitigated diaktifkan
+                bool is_mitigated = false
+                if not htf_fvg_mitigated and i > 1
+                    for j = i - 2 to 0
+                        UDT_HTF_Candle c_sub = htf_candles.get(j)
+                        if is_bull_fvg and c_sub.l <= bot_y
+                            is_mitigated := true
+                            break
+                        if is_bear_fvg and c_sub.h >= top_y
+                            is_mitigated := true
+                            break
+
+                if not is_mitigated
+                    int left_x   = c1.candle_left
+                    int right_x  = htf_fvg_extend ? htf_candles.get(0).candle_right : c3.candle_right
+                    color bg_col = is_bull_fvg ? htf_fvg_bull_color : htf_fvg_bear_color
+                    color b_col  = htf_fvg_border_show ? htf_fvg_border_color : color_transparent
+                    int bw       = htf_fvg_border_show ? 1 : 0
+                    bin.bin_box.push(box.new(left = left_x, top = top_y, right = right_x, bottom = bot_y, bgcolor = bg_col, border_color = b_col, border_width = bw))
+    htf_candles
+
 method plot_htf(array<UDT_HTF_Candle> htf_candles, string tf) =>
+    if htf_fvg_show
+        htf_candles.draw_htf_fvg()
     for [index, candle] in htf_candles
         candle.draw_htf_candle()
     if htf_sweeps_label_show and htf_candles.size() > 0

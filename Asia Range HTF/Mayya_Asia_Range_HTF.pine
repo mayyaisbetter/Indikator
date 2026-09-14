@@ -1294,11 +1294,11 @@ if show_asia
             label.set_y(sess1_current_label, lbl_y)
 
     else if sess1_ended
-        // Finalisasi posisi kanan box tepat pada candle terakhir sesi Asia
+        // Finalisasi posisi kanan box tepat pada candle pembuka setelah sesi berakhir (bar_index) agar seluruh candle sesi terlingkupi utuh
         if not na(sess1_current_box)
             box.set_top(sess1_current_box, sess1_high)
             box.set_bottom(sess1_current_box, sess1_low)
-            box.set_right(sess1_current_box, bar_index - 1)
+            box.set_right(sess1_current_box, bar_index)
 else
     // Jika berada di timeframe >= 1H atau dimatikan, bersihkan semua box/label yang tersisa
     if array.size(sess1_boxes) > 0

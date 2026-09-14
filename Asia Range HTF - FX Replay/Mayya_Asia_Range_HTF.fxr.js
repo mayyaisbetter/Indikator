@@ -96,10 +96,10 @@ init = () => {
     'Modul HTF Candle'
   );
 
-  // Pewarnaan & Sumbu HTF
-  _htfBullColor     = input.color('Warna Bullish HTF', color.green, 'htfBullColor', 'Styling HTF');
-  _htfBearColor     = input.color('Warna Bearish HTF', color.red, 'htfBearColor', 'Styling HTF');
-  _htfWickColor     = input.color('Warna Wick / Border HTF', color.black, 'htfWickColor', 'Styling HTF');
+  // Pewarnaan & Sumbu HTF (Default: Bull Putih Susu, Bear Hitam)
+  _htfBullColor     = input.color('Warna Bullish HTF', (typeof color !== 'undefined' && color.white) || '#ffffff', 'htfBullColor', 'Styling HTF');
+  _htfBearColor     = input.color('Warna Bearish HTF', (typeof color !== 'undefined' && color.black) || '#000000', 'htfBearColor', 'Styling HTF');
+  _htfWickColor     = input.color('Warna Wick / Border HTF', (typeof color !== 'undefined' && color.black) || '#000000', 'htfWickColor', 'Styling HTF');
   _htfShowWick      = input.bool('Tampilkan Sumbu (Wick)', true, 'htfShowWick', 'Styling HTF');
   _htfLineWidth     = input.int('Ketebalan Garis / Sumbu', 1, 'htfLineWidth', 1, 4, 1, undefined, 'Styling HTF');
 
@@ -450,9 +450,9 @@ onTick = (length, _moment, _, ta) => {
   if (_showHtf && typeof mtf !== 'undefined' && mtf) {
     var candlesAmount = typeof _htfCandlesAmount === 'number' ? Math.max(1, _htfCandlesAmount) : 4;
     var isProjected = _htfMode === 'Projected (Kanan Chart)';
-    var bullColor = _htfBullColor || (typeof color !== 'undefined' && color.green) || '#26a69a';
-    var bearColor = _htfBearColor || (typeof color !== 'undefined' && color.red) || '#ef5350';
-    var wickColor = _htfWickColor || (typeof color !== 'undefined' && color.black) || '#787b86';
+    var bullColor = _htfBullColor || (typeof color !== 'undefined' && color.white) || '#ffffff';
+    var bearColor = _htfBearColor || (typeof color !== 'undefined' && color.black) || '#000000';
+    var wickColor = _htfWickColor || (typeof color !== 'undefined' && color.black) || '#000000';
     var lineWidth = typeof _htfLineWidth === 'number' ? _htfLineWidth : 1;
     var cleanTf = toFxrTimeframe(_htfTf);
     var htfDuration = estimateTfDurationMs(cleanTf);

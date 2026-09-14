@@ -68,7 +68,7 @@ wm_font                                     = input.string("Default", "Gaya Font
 wm_bold                                     = input.bool(true, "Teks Tebal (Bold)", group = g_wm, tooltip = "Mengubah karakter teks menjadi tebal (Bold Mathematical Unicode)")
 wm_title_size                               = input.string("Normal", "Ukuran Title", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
 wm_sub_size                                 = input.string("Small", "Ukuran Subtitle", options = ["Tiny", "Small", "Normal", "Large", "Huge"], inline = "wm_sz", group = g_wm)
-wm_title_color                              = input.color(#00E676, "Warna Title", inline = "wm_col", group = g_wm)
+wm_title_color                              = input.color(colors_black, "Warna Title", inline = "wm_col", group = g_wm)
 wm_sub_color                                = input.color(color.gray, "Warna Subtitle", inline = "wm_col", group = g_wm)
 wm_opacity                                  = input.int(20, "Transparansi Teks (%)", minval = 0, maxval = 90, group = g_wm, tooltip = "0% = sangat pekat/tebal, 90% = sangat transparan")
 
@@ -98,7 +98,7 @@ htf_sweeps_tf_6_tf                          = input.timeframe("1M", "", inline =
 htf_sweeps_tf_6_number                      = input.int(1, "", inline = "6.0", group = "Timeframes", minval = 1, maxval = 60)
 htf_sweeps_tf_6_map                         = input.bool(false, "M", inline = "6.0", group = "Timeframes")
 
-htf_sweeps_bull_color                       = input.color(colors_green, "Coloring     ", inline = "1.0", group = "HTF")
+htf_sweeps_bull_color                       = input.color(colors_white, "Coloring     ", inline = "1.0", group = "HTF")
 htf_sweeps_bear_color                       = input.color(colors_black, "", inline = "1.0", group = "HTF")
 htf_sweeps_wick_border_color                = input.color(colors_black, "", inline = "1.0", group = "HTF")
 htf_sweeps_offset                           = input.int(10, "Offset            ", minval = 1, inline = "2.0", group = "HTF", tooltip = "The distance from the current chart candles.")

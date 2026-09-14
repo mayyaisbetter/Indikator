@@ -52,6 +52,7 @@ color_transparent                   = #ffffff00
 
 // # General ----------------------------------------------------------------- #
 
+i_tz                                        = input.string('(UTC-4) New York', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group='General', tooltip='Pilih zona waktu acuan untuk sesi trading')
 general_font                                = input.string("Small Caps", "Text Style", options = ["Small Caps", "Bold Modern", "Default", "Monospace"], inline = "1.0", group = "General", tooltip = "Pilih gaya teks:\n- Small Caps: Huruf kapital mini ala ICT/SMC\n- Bold Modern: Teks tebal sans-serif\n- Default: Sans-serif standar TradingView\n- Monospace: Teks fixed-width terminal")
 general_text                                = input.string("Tiny", "", options = ["Tiny", "Small", "Normal", "Large", "Huge", "Auto"], inline = "1.0", group = "General")
 
@@ -1088,6 +1089,7 @@ g_asia                  = 'Asia Range'
 g_box                   = 'Box Asia'
 g_label                 = 'Label Asia'
 
+option_border_style0    = 'None'
 option_border_style1    = '────'
 option_border_style2    = '- - - - - -'
 option_border_style3    = '•••••••••'
@@ -1115,8 +1117,7 @@ f_size_enum(string s) =>
         'huge'   => size.huge
         => size.small
 
-// Timezone & Pengaturan Sesi Asia (Posisi paling atas dengan format nama kota TradingView)
-i_tz                    = input.string('(UTC-4) New York', title='Timezone', options=['Exchange', '(UTC-10) Honolulu', '(UTC-8) Anchorage', '(UTC-8) Juneau', '(UTC-7) Los Angeles', '(UTC-7) Phoenix', '(UTC-7) Vancouver', '(UTC-6) Denver', '(UTC-6) Mexico City', '(UTC-6) San Salvador', '(UTC-5) Bogota', '(UTC-5) Chicago', '(UTC-5) Lima', '(UTC-4) Caracas', '(UTC-4) New York', '(UTC-4) Toronto', '(UTC-3) Buenos Aires', '(UTC-3) Halifax', '(UTC-3) Santiago', '(UTC-3) Sao Paulo', '(UTC) Azores', '(UTC) Reykjavik', '(UTC) UTC', '(UTC+1) Casablanca', '(UTC+1) Dublin', '(UTC+1) Lagos', '(UTC+1) Lisbon', '(UTC+1) London', '(UTC+1) Tunis', '(UTC+2) Athens', '(UTC+2) Cairo', '(UTC+2) Helsinki', '(UTC+2) Jerusalem', '(UTC+2) Johannesburg', '(UTC+3) Bahrain', '(UTC+3) Istanbul', '(UTC+3) Kuwait', '(UTC+3) Moscow', '(UTC+3) Qatar', '(UTC+3) Riyadh', '(UTC+3:30) Tehran', '(UTC+4) Dubai', '(UTC+4) Muscat', '(UTC+5) Ashgabat', '(UTC+5) Karachi', '(UTC+5) Tashkent', '(UTC+5:30) Kolkata', '(UTC+5:45) Kathmandu', '(UTC+6) Almaty', '(UTC+7) Bangkok', '(UTC+7) Jakarta', '(UTC+7) Ho Chi Minh', '(UTC+8) Hong Kong', '(UTC+8) Kuala Lumpur', '(UTC+8) Manila', '(UTC+8) Shanghai', '(UTC+8) Singapore', '(UTC+8) Taipei', '(UTC+9) Seoul', '(UTC+9) Tokyo', '(UTC+9:30) Adelaide', '(UTC+10) Brisbane', '(UTC+10) Sydney', '(UTC+11) Noumea', '(UTC+12) Auckland', '(UTC+12) Fiji'], group=g_asia)
+// Pengaturan Sesi Asia
 i_history_period        = input.int(10, 'History', minval=1, group=g_asia, tooltip='Berapa sesi Asia terakhir yang ditampilkan di chart')
 i_show                  = i_history_period > 0
 
@@ -1128,11 +1129,14 @@ i_sess1                 = input.session('2000-0000', 'Jam Sesi Asia', group=g_as
 
 // Styling Box
 i_sess_box_style        = input.string('Box', '', options=['Box', 'Background'], group=g_box, inline='box_style')
-i_sess_border_style     = f_border_style(input.string(option_border_style2, '', options=[option_border_style1, option_border_style2, option_border_style3], group=g_box, inline='box_style'))
+i_sess_border_style_raw = input.string(option_border_style2, '', options=[option_border_style0, option_border_style1, option_border_style2, option_border_style3], group=g_box, inline='box_style')
+i_sess_border_style     = f_border_style(i_sess_border_style_raw)
 i_sess_border_width     = input.int(1, '', minval=0, group=g_box, inline='box_style')
 i_sess_box_background   = input.bool(true, 'BG color', group=g_box, inline='box_style_options')
 i_sess_bgopacity        = i_sess_box_background ? 94 : 100
-int sess_bw             = i_sess_box_style == 'Background' ? 0 : i_sess_border_width
+bool has_border         = i_sess_box_style != 'Background' and i_sess_border_style_raw != option_border_style0 and i_sess_border_width > 0
+int sess_bw             = has_border ? i_sess_border_width : 0
+color sess_border_color = has_border ? i_sess1_color : color_transparent
 
 // Labels
 i_label_show            = input.bool(true, 'Tampilkan Label', group=g_label, inline='label_show') and i_show
@@ -1252,7 +1256,7 @@ if show_asia
             // Buat box baru untuk sesi Asia yang baru buka
             color box_bg = i_sess_box_background ? color.new(i_sess1_color, i_sess_bgopacity) : color_transparent
             sess1_current_box := box.new(left=bar_index, top=sess1_high, right=bar_index, bottom=sess1_low,
-                                         border_color=i_sess1_color, border_width=sess_bw,
+                                         border_color=sess_border_color, border_width=sess_bw,
                                          border_style=i_sess_border_style, bgcolor=box_bg)
             array.push(sess1_boxes, sess1_current_box)
             if array.size(sess1_boxes) > i_history_period

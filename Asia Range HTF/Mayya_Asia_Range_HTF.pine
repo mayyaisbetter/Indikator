@@ -203,17 +203,17 @@ method clean_bin(UDT_Store store) =>
     store.bin_lbl.clear()
     store.bin_polyline.clear()
 
-f_clear_boxes(box[] arr) =>
+f_clear_boxes(array<box> arr) =>
     for b in arr
         box.delete(b)
     arr.clear()
 
-f_clear_labels(label[] arr) =>
+f_clear_labels(array<label> arr) =>
     for l in arr
         label.delete(l)
     arr.clear()
 
-f_clear_lines(line[] arr) =>
+f_clear_lines(array<line> arr) =>
     for ln in arr
         line.delete(ln)
     arr.clear()
@@ -239,23 +239,25 @@ f_font_style(string font) =>
         'Monospace' => font.family_monospace
         => font.family_default
 
-// Karakter Lookup Efisien (Single-pass parsing dengan 'var' array)
+// Karakter Lookup Efisien (Single-pass parsing per karakter tanpa separator kosong)
 var string chars_std_bold = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-var string[] chars_bold   = str.split("𝗮,𝗯,𝗰,𝗱,𝗲,𝗳,𝗴,𝗵,𝗶,𝗷,𝗸,𝗹,𝗺,𝗻,𝗼,𝗽,𝗾,𝗿,𝘀,𝘁,𝘂,𝘃,𝘄,𝘅,𝘆,𝘇,𝗔,𝗕,𝗖,𝗗,𝗘,𝗙,𝗚,𝗛,𝗜,𝗝,𝗞,𝗟,𝗠,𝗡,𝗢,𝗣,𝗤,𝗥,𝗦,𝗧,𝗨,𝗩,𝗪,𝗫,𝗬,𝗭,𝟬,𝟭,𝟮,𝟯,𝟰,𝟱,𝟲,𝟳,𝟴,𝟵", ",")
+var array<string> chars_bold = str.split("𝗮,𝗯,𝗰,𝗱,𝗲,𝗳,𝗴,𝗵,𝗶,𝗷,𝗸,𝗹,𝗺,𝗻,𝗼,𝗽,𝗾,𝗿,𝘀,𝘁,𝘂,𝘃,𝘄,𝘅,𝘆,𝘇,𝗔,𝗕,𝗖,𝗗,𝗘,𝗙,𝗚,𝗛,𝗜,𝗝,𝗞,𝗟,𝗠,𝗡,𝗢,𝗣,𝗤,𝗥,𝗦,𝗧,𝗨,𝗩,𝗪,𝗫,𝗬,𝗭,𝟬,𝟭,𝟮,𝟯,𝟰,𝟱,𝟲,𝟳,𝟴,𝟵", ",")
 
-var string chars_std_sc   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-var string[] chars_sc     = str.split("ᴀ,ʙ,ᴄ,ᴅ,ᴇ,ғ,ɢ,ʜ,ɪ,ᴊ,ᴋ,ʟ,ᴍ,ɴ,ᴏ,ᴘ,ǫ,ʀ,ꜱ,ᴛ,ᴜ,ᴠ,ᴡ,x,ʏ,ᴢ,ᴀ,ʙ,ᴄ,ᴅ,ᴇ,ғ,ɢ,ʜ,ɪ,ᴊ,ᴋ,ʟ,ᴍ,ɴ,ᴏ,ᴘ,ǫ,ʀ,ꜱ,ᴛ,ᴜ,ᴠ,ᴡ,x,ʏ,ᴢ", ",")
+var string chars_std_sc = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+var array<string> chars_sc = str.split("ᴀ,ʙ,ᴄ,ᴅ,ᴇ,ғ,ɢ,ʜ,ɪ,ᴊ,ᴋ,ʟ,ᴍ,ɴ,ᴏ,ᴘ,ǫ,ʀ,ꜱ,ᴛ,ᴜ,ᴠ,ᴡ,x,ʏ,ᴢ,ᴀ,ʙ,ᴄ,ᴅ,ᴇ,ғ,ɢ,ʜ,ɪ,ᴊ,ᴋ,ʟ,ᴍ,ɴ,ᴏ,ᴘ,ǫ,ʀ,ꜱ,ᴛ,ᴜ,ᴠ,ᴡ,x,ʏ,ᴢ", ",")
 
-f_map_chars(string txt, string from_chars, string[] to_chars) =>
-    if txt == ""
-        ""
-    else
-        string[] chars = str.split(txt, "")
-        for i = 0 to chars.size() - 1
-            int pos = str.pos(from_chars, chars.get(i))
+f_map_chars(string txt, string from_chars, array<string> to_chars) =>
+    int len = str.length(txt)
+    string res = ""
+    if len > 0
+        for i = 0 to len - 1
+            string ch = str.substring(txt, i, i + 1)
+            int pos = str.pos(from_chars, ch)
             if not na(pos) and pos >= 0 and pos < to_chars.size()
-                chars.set(i, to_chars.get(pos))
-        str.join(chars, "")
+                res += to_chars.get(pos)
+            else
+                res += ch
+    res
 
 to_bold(string txt) =>
     f_map_chars(txt, chars_std_bold, chars_bold)

@@ -11,6 +11,7 @@ indicator("PSP & SMT Divergence [Mayya]", shorttitle="PSP & SMT [Mayya]", overla
 //#region Constants & Helpers
 color_c_green       = #089981
 color_c_red         = #f23645
+color_c_black       = #000000
 color_transparent   = #ffffff00
 
 f_line_style(string s) =>
@@ -38,7 +39,7 @@ f_short_name(string sym) =>
 // # ========================================================================= #
 
 //#region Correlated Symbols
-g_sym         = "📊 Simbol Korelasi (Maks. 3 Pair - Otomatis Ikut Timeframe Chart)"
+g_sym         = "Simbol Korelasi (Maks. 3 Pair - Otomatis Ikut Timeframe Chart)"
 
 // Slot 1
 enable_s1     = input.bool(true, "Aktif", inline = "s1", group = g_sym)
@@ -65,26 +66,36 @@ s3_name = f_short_name(sym3)
 // # ========================================================================= #
 
 //#region SMT Settings
-g_smt              = "⚡ SMT Divergence (Smart Money Technique)"
-smt_show           = input.bool(true, "Aktifkan Garis SMT", group = g_smt)
-smt_line_color     = input.color(color_c_red, "Warna Garis SMT", inline = "smt_l", group = g_smt)
-smt_line_style_str = input.string("Solid", "Gaya Garis", options = ["Solid", "Dashed", "Dotted"], inline = "smt_l", group = g_smt)
-smt_line_width     = input.int(2, "Lebar", minval = 1, maxval = 4, inline = "smt_l", group = g_smt)
+g_smt              = "SMT Divergence (Smart Money Technique)"
+
+// Kontrol SMT Atas & Bawah (Opsi 2)
+smt_show_bull      = input.bool(true, "Aktifkan SMT Bawah (Bullish)", inline = "smt_bull", group = g_smt)
+smt_bull_color     = input.color(color_c_black, "Warna", inline = "smt_bull", group = g_smt)
+
+smt_show_bear      = input.bool(true, "Aktifkan SMT Atas (Bearish)", inline = "smt_bear", group = g_smt)
+smt_bear_color     = input.color(color_c_black, "Warna", inline = "smt_bear", group = g_smt)
+
+smt_line_style_str = input.string("Solid", "Gaya Garis", options = ["Solid", "Dashed", "Dotted"], inline = "smt_style", group = g_smt)
+smt_line_width     = input.int(1, "Lebar", minval = 1, maxval = 4, inline = "smt_style", group = g_smt)
+smt_extend         = input.bool(false, "Perpanjang Garis ke Kanan (Extend)", group = g_smt, tooltip = "Jika aktif, garis SMT akan diperpanjang ke kanan sampai levelnya ditembus/dibreak oleh pergerakan harga selanjutnya")
 
 // Validasi Break SMT
 smt_break_val      = input.bool(true, "Auto Invalidate SMT yang Di-Break", group = g_smt, tooltip = "Hapus otomatis garis dan label SMT jika levelnya sudah ditembus/dibreak oleh harga selanjutnya sehingga chart tetap bersih dan hanya menampilkan SMT yang valid")
 smt_break_by       = input.string("Wick", "Break Berdasarkan", options = ["Wick", "Close"], inline = "smt_brk", group = g_smt, tooltip = "Wick: Langsung invalid jika sumbu candle (high/low) menembus level SMT. Close: Hanya invalid jika candle ditutup (close) menembus level SMT")
 smt_break_mode     = input.string("SMC Swing Extreme (Min/Max)", "Level Invalidasi", options = ["SMC Swing Extreme (Min/Max)", "Trigger Swing (Point 2)"], inline = "smt_brk", group = g_smt, tooltip = "SMC Swing Extreme: Level tertinggi/terendah dari kedua titik SMT (standar ICT). Trigger Swing: Level swing kedua pemicu SMT")
 
-smt_left           = input.int(1, "Swing Lookback (Kiri)", minval = 1, maxval = 10, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kiri untuk mendeteksi swing pivot fractal (Default 1 untuk fractal 3-bar standar SMC agar pergerakan cepat tidak terlewat)")
-smt_right          = input.int(1, "Konfirmasi (Kanan)", minval = 1, maxval = 5, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kanan untuk konfirmasi swing pivot fractal (Default 1)")
+// Mode Sensitivitas (Preset 1-Klik - Opsi 1)
+smt_preset         = input.string("Cepat / Scalping (1 & 1)", "Mode Sensitivitas", options = ["Cepat / Scalping (1 & 1)", "Normal / Intraday (2 & 2)", "Major / Swing (3 & 3)", "Kustom"], group = g_smt, tooltip = "Pilih preset deteksi swing otomatis atau pilih Kustom untuk menentukan lookback sendiri")
+smt_left_custom    = input.int(1, "Lookback Kiri (Kustom)", minval = 1, maxval = 10, inline = "smt_cust", group = g_smt, tooltip = "Hanya berlaku jika Mode Sensitivitas diset ke Kustom")
+smt_right_custom   = input.int(1, "Konfirmasi Kanan (Kustom)", minval = 1, maxval = 5, inline = "smt_cust", group = g_smt, tooltip = "Hanya berlaku jika Mode Sensitivitas diset ke Kustom")
+
 smt_min_bars       = input.int(2, "Min. Jarak Bar", minval = 1, maxval = 10, inline = "smt_dist", group = g_smt, tooltip = "Jarak minimum candle antar kedua swing point agar tidak bertumpuk")
 smt_max_bars       = input.int(60, "Maks. Jarak Bar", minval = 5, maxval = 200, inline = "smt_dist", group = g_smt, tooltip = "Jarak maksimum candle antar kedua swing point untuk relevansi struktur market (Default 60)")
 smt_max_lines      = input.int(5, "Maksimum Garis", minval = 1, maxval = 20, group = g_smt, tooltip = "Batasi jumlah garis aktif di chart agar tetap bersih dan fokus pada SMT valid terkini")
 
 smt_lbl_show       = input.bool(true, "Tampilkan Label SMT", inline = "smt_lbl", group = g_smt)
 smt_lbl_size_str   = input.string("Normal", "Ukuran", options = ["Tiny", "Small", "Normal", "Large"], inline = "smt_lbl", group = g_smt)
-smt_lbl_color      = input.color(color_c_red, "Warna Teks", inline = "smt_lbl_c", group = g_smt)
+smt_lbl_color      = input.color(color_c_black, "Warna Teks", inline = "smt_lbl_c", group = g_smt)
 smt_lbl_bg         = input.color(color_transparent, "Background", inline = "smt_lbl_c", group = g_smt)
 
 smt_line_style     = f_line_style(smt_line_style_str)
@@ -96,7 +107,7 @@ smt_lbl_size       = f_label_size(smt_lbl_size_str)
 // # ========================================================================= #
 
 //#region PSP Settings
-g_psp              = "🕯️ Price Symmetry Pivot (PSP)"
+g_psp              = "Price Symmetry Pivot (PSP)"
 psp_show           = input.bool(true, "Aktifkan Pewarnaan Candle PSP", group = g_psp)
 psp_bull_color     = input.color(color_c_green, "Warna Bullish PSP", inline = "psp_col", group = g_psp)
 psp_bear_color     = input.color(color_c_red,   "Warna Bearish PSP", inline = "psp_col", group = g_psp)
@@ -175,14 +186,27 @@ barcolor(psp_color, title = "Warna Candle PSP")
 // # ========================================================================= #
 
 //#region SMT Logic
+// Hitung lookback dinamis berdasarkan Preset Sensitivitas (Opsi 1)
+int calc_left = switch smt_preset
+    "Cepat / Scalping (1 & 1)"  => 1
+    "Normal / Intraday (2 & 2)" => 2
+    "Major / Swing (3 & 3)"     => 3
+    => smt_left_custom
+
+int calc_right = switch smt_preset
+    "Cepat / Scalping (1 & 1)"  => 1
+    "Normal / Intraday (2 & 2)" => 2
+    "Major / Swing (3 & 3)"     => 3
+    => smt_right_custom
+
 // Deteksi Swing Point menggunakan ta.pivotlow dan ta.pivothigh pada timeframe chart aktif
-float pl_pivot = ta.pivotlow(low, smt_left, smt_right)
-float ph_pivot = ta.pivothigh(high, smt_left, smt_right)
+float pl_pivot = ta.pivotlow(low, calc_left, calc_right)
+float ph_pivot = ta.pivothigh(high, calc_left, calc_right)
 
 bool is_swing_low  = not na(pl_pivot)
 bool is_swing_high = not na(ph_pivot)
 
-int p_offset = smt_right
+int p_offset = calc_right
 
 // Fungsi pembaca harga ekstrim korelasi (dengan toleransi ±1 bar agar akurat menangkap ujung wick)
 f_corr_low(float src, int off) =>
@@ -247,7 +271,7 @@ if smt_break_val and array.size(active_smt_lines) > 0
 bool is_smt_bull = false
 string bull_pair_txt = ""
 
-if is_swing_low and smt_show
+if is_swing_low and smt_show_bull
     float curr_low_price = low[p_offset]
     int   curr_low_time  = time[p_offset]
     int   curr_low_bar   = bar_index[p_offset]
@@ -308,7 +332,9 @@ if is_swing_low and smt_show
                 // Buat garis SMT tepat menghubungkan kedua wick major swing low
                 line l_smt = line.new(x1 = major_low_time, y1 = major_low_price,
                                       x2 = curr_low_time, y2 = curr_low_price,
-                                      xloc = xloc.bar_time, color = smt_line_color,
+                                      xloc = xloc.bar_time,
+                                      extend = smt_extend ? extend.right : extend.none,
+                                      color = smt_bull_color,
                                       width = smt_line_width, style = smt_line_style)
                 
                 // Label tepat di tengah garis dengan nama pair korelasi
@@ -360,7 +386,7 @@ if is_swing_low and smt_show
 bool is_smt_bear = false
 string bear_pair_txt = ""
 
-if is_swing_high and smt_show
+if is_swing_high and smt_show_bear
     float curr_high_price = high[p_offset]
     int   curr_high_time  = time[p_offset]
     int   curr_high_bar   = bar_index[p_offset]
@@ -417,7 +443,9 @@ if is_swing_high and smt_show
                 
                 line l_smt = line.new(x1 = major_high_time, y1 = major_high_price,
                                       x2 = curr_high_time, y2 = curr_high_price,
-                                      xloc = xloc.bar_time, color = smt_line_color,
+                                      xloc = xloc.bar_time,
+                                      extend = smt_extend ? extend.right : extend.none,
+                                      color = smt_bear_color,
                                       width = smt_line_width, style = smt_line_style)
                 
                 int   mid_x = int(math.avg(major_high_time, curr_high_time))
@@ -468,8 +496,8 @@ if is_swing_high and smt_show
 // # ========================================================================= #
 
 //#region Alerts
-alertcondition(is_smt_bull, "Bullish SMT Divergence", "🟢 Bullish SMT Divergence terdeteksi pada {{ticker}}!")
-alertcondition(is_smt_bear, "Bearish SMT Divergence", "🔴 Bearish SMT Divergence terdeteksi pada {{ticker}}!")
-alertcondition(is_psp_bull, "Bullish PSP Candle",     "🟢 Bullish PSP Candle terdeteksi pada {{ticker}}!")
-alertcondition(is_psp_bear, "Bearish PSP Candle",     "🔴 Bearish PSP Candle terdeteksi pada {{ticker}}!")
+alertcondition(is_smt_bull, "Bullish SMT Divergence", "Bullish SMT Divergence terdeteksi pada {{ticker}}!")
+alertcondition(is_smt_bear, "Bearish SMT Divergence", "Bearish SMT Divergence terdeteksi pada {{ticker}}!")
+alertcondition(is_psp_bull, "Bullish PSP Candle",     "Bullish PSP Candle terdeteksi pada {{ticker}}!")
+alertcondition(is_psp_bear, "Bearish PSP Candle",     "Bearish PSP Candle terdeteksi pada {{ticker}}!")
 //#endregion

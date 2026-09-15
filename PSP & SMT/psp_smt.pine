@@ -71,11 +71,16 @@ smt_line_color     = input.color(color_c_red, "Warna Garis SMT", inline = "smt_l
 smt_line_style_str = input.string("Solid", "Gaya Garis", options = ["Solid", "Dashed", "Dotted"], inline = "smt_l", group = g_smt)
 smt_line_width     = input.int(2, "Lebar", minval = 1, maxval = 4, inline = "smt_l", group = g_smt)
 
-smt_left           = input.int(2, "Swing Lookback (Kiri)", minval = 1, maxval = 10, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kiri untuk mendeteksi swing pivot (Default 2 untuk mendeteksi struktur 3-5 bar fractal)")
-smt_right          = input.int(1, "Konfirmasi (Kanan)", minval = 1, maxval = 5, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kanan untuk konfirmasi swing pivot (Default 1)")
+// Validasi Break SMT
+smt_break_val      = input.bool(true, "Auto Invalidate SMT yang Di-Break", group = g_smt, tooltip = "Hapus otomatis garis dan label SMT jika levelnya sudah ditembus/dibreak oleh harga selanjutnya sehingga chart tetap bersih dan hanya menampilkan SMT yang valid")
+smt_break_by       = input.string("Wick", "Break Berdasarkan", options = ["Wick", "Close"], inline = "smt_brk", group = g_smt, tooltip = "Wick: Langsung invalid jika sumbu candle (high/low) menembus level SMT. Close: Hanya invalid jika candle ditutup (close) menembus level SMT")
+smt_break_mode     = input.string("SMC Swing Extreme (Min/Max)", "Level Invalidasi", options = ["SMC Swing Extreme (Min/Max)", "Trigger Swing (Point 2)"], inline = "smt_brk", group = g_smt, tooltip = "SMC Swing Extreme: Level tertinggi/terendah dari kedua titik SMT (standar ICT). Trigger Swing: Level swing kedua pemicu SMT")
+
+smt_left           = input.int(1, "Swing Lookback (Kiri)", minval = 1, maxval = 10, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kiri untuk mendeteksi swing pivot fractal (Default 1 untuk fractal 3-bar standar SMC agar pergerakan cepat tidak terlewat)")
+smt_right          = input.int(1, "Konfirmasi (Kanan)", minval = 1, maxval = 5, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kanan untuk konfirmasi swing pivot fractal (Default 1)")
 smt_min_bars       = input.int(2, "Min. Jarak Bar", minval = 1, maxval = 10, inline = "smt_dist", group = g_smt, tooltip = "Jarak minimum candle antar kedua swing point agar tidak bertumpuk")
-smt_max_bars       = input.int(40, "Maks. Jarak Bar", minval = 5, maxval = 100, inline = "smt_dist", group = g_smt, tooltip = "Jarak maksimum candle antar kedua swing point untuk relevansi struktur market")
-smt_max_lines      = input.int(3, "Maksimum Garis", minval = 1, maxval = 10, group = g_smt, tooltip = "Batasi jumlah garis di chart agar tetap bersih dan fokus pada SMT terkini")
+smt_max_bars       = input.int(60, "Maks. Jarak Bar", minval = 5, maxval = 200, inline = "smt_dist", group = g_smt, tooltip = "Jarak maksimum candle antar kedua swing point untuk relevansi struktur market (Default 60)")
+smt_max_lines      = input.int(5, "Maksimum Garis", minval = 1, maxval = 20, group = g_smt, tooltip = "Batasi jumlah garis aktif di chart agar tetap bersih dan fokus pada SMT valid terkini")
 
 smt_lbl_show       = input.bool(true, "Tampilkan Label SMT", inline = "smt_lbl", group = g_smt)
 smt_lbl_size_str   = input.string("Normal", "Ukuran", options = ["Tiny", "Small", "Normal", "Large"], inline = "smt_lbl", group = g_smt)
@@ -202,9 +207,41 @@ var float major_high_s1     = na
 var float major_high_s2     = na
 var float major_high_s3     = na
 
-// Array storage visual lines & labels
-var line[]  smt_lines_arr  = array.new_line()
-var label[] smt_labels_arr = array.new_label()
+// Storage visual lines, labels, dan tracking level invalidasi (Break Invalidation Engine)
+var line[]  active_smt_lines      = array.new_line()
+var label[] active_smt_labels     = array.new_label()
+var bool[]  active_smt_is_bull    = array.new_bool()
+var float[] active_smt_break_lvl  = array.new_float()
+var int[]   active_smt_create_bar = array.new_int()
+
+// ── SMT Break Invalidation Engine (Auto Delete Broken SMTs) ───
+if smt_break_val and array.size(active_smt_lines) > 0
+    int i = array.size(active_smt_lines) - 1
+    while i >= 0
+        bool  b_is_bull = array.get(active_smt_is_bull, i)
+        float b_lvl     = array.get(active_smt_break_lvl, i)
+        int   b_bar     = array.get(active_smt_create_bar, i)
+        
+        // Evaluasi apakah harga menembus level invalidasi pada candle setelah SMT terkonfirmasi
+        if bar_index > b_bar
+            bool is_broken = false
+            if b_is_bull
+                is_broken := (smt_break_by == "Wick" ? low < b_lvl : close < b_lvl)
+            else
+                is_broken := (smt_break_by == "Wick" ? high > b_lvl : close > b_lvl)
+            
+            if is_broken
+                line.delete(array.get(active_smt_lines, i))
+                label lbl_del = array.get(active_smt_labels, i)
+                if not na(lbl_del)
+                    label.delete(lbl_del)
+                
+                array.remove(active_smt_lines, i)
+                array.remove(active_smt_labels, i)
+                array.remove(active_smt_is_bull, i)
+                array.remove(active_smt_break_lvl, i)
+                array.remove(active_smt_create_bar, i)
+        i -= 1
 
 // ── Evaluasi SMT Bullish (Major Swing Low Divergence) ─────────
 bool is_smt_bull = false
@@ -218,8 +255,20 @@ if is_swing_low and smt_show
     float curr_s2_low    = f_corr_low(s2_L, p_offset)
     float curr_s3_low    = f_corr_low(s3_L, p_offset)
     
-    // Syarat SMC Presisi: Harus ada Major Swing High (Puncak) di antara kedua Swing Low (Lembah)!
-    bool has_intervening_high = not na(major_high_bar) and (major_high_bar > major_low_bar)
+    // Cek Intervening High: harus ada pantulan / swing high di antara kedua swing low
+    bool has_intervening_high = false
+    if not na(major_low_bar)
+        int bar_dist = curr_low_bar - major_low_bar
+        bool pivot_high_between = not na(major_high_bar) and (major_high_bar > major_low_bar) and (major_high_bar < curr_low_bar)
+        bool local_peak_between = false
+        if bar_dist >= 2
+            int check_limit = math.min(bar_dist - 1, 60)
+            for k = 1 to check_limit
+                int idx = p_offset + k
+                if high[idx] > high[idx + 1] and high[idx] > high[idx - 1] and high[idx] > math.max(curr_low_price, major_low_price)
+                    local_peak_between := true
+                    break
+        has_intervening_high := pivot_high_between or local_peak_between
     
     if not na(major_low_price) and has_intervening_high
         int bar_distance = curr_low_bar - major_low_bar
@@ -271,14 +320,24 @@ if is_swing_low and smt_show
                                                         textcolor = smt_lbl_color, style = label.style_label_center,
                                                         size = smt_lbl_size) : na
                 
-                array.push(smt_lines_arr, l_smt)
-                if not na(l_lbl)
-                    array.push(smt_labels_arr, l_lbl)
+                // Level invalidasi untuk validasi break
+                float break_lvl = smt_break_mode == "SMC Swing Extreme (Min/Max)" ? 
+                                  math.min(major_low_price, curr_low_price) : curr_low_price
                 
-                while array.size(smt_lines_arr) > smt_max_lines
-                    line.delete(array.shift(smt_lines_arr))
-                while array.size(smt_labels_arr) > smt_max_lines
-                    label.delete(array.shift(smt_labels_arr))
+                array.push(active_smt_lines, l_smt)
+                array.push(active_smt_labels, l_lbl)
+                array.push(active_smt_is_bull, true)
+                array.push(active_smt_break_lvl, break_lvl)
+                array.push(active_smt_create_bar, bar_index)
+                
+                while array.size(active_smt_lines) > smt_max_lines
+                    line.delete(array.shift(active_smt_lines))
+                    label lbl_shift = array.shift(active_smt_labels)
+                    if not na(lbl_shift)
+                        label.delete(lbl_shift)
+                    array.shift(active_smt_is_bull)
+                    array.shift(active_smt_break_lvl)
+                    array.shift(active_smt_create_bar)
     
     // Perbarui state Major Swing Low
     if na(major_low_price) or has_intervening_high
@@ -309,8 +368,20 @@ if is_swing_high and smt_show
     float curr_s2_high    = f_corr_high(s2_H, p_offset)
     float curr_s3_high    = f_corr_high(s3_H, p_offset)
     
-    // Syarat SMC Presisi: Harus ada Major Swing Low (Lembah) di antara kedua Swing High (Puncak)!
-    bool has_intervening_low = not na(major_low_bar) and (major_low_bar > major_high_bar)
+    // Cek Intervening Low: harus ada lembah / swing low di antara kedua swing high
+    bool has_intervening_low = false
+    if not na(major_high_bar)
+        int bar_dist_h = curr_high_bar - major_high_bar
+        bool pivot_low_between = not na(major_low_bar) and (major_low_bar > major_high_bar) and (major_low_bar < curr_high_bar)
+        bool local_trough_between = false
+        if bar_dist_h >= 2
+            int check_limit_h = math.min(bar_dist_h - 1, 60)
+            for k = 1 to check_limit_h
+                int idx = p_offset + k
+                if low[idx] < low[idx + 1] and low[idx] < low[idx - 1] and low[idx] < math.min(curr_high_price, major_high_price)
+                    local_trough_between := true
+                    break
+        has_intervening_low := pivot_low_between or local_trough_between
     
     if not na(major_high_price) and has_intervening_low
         int bar_distance = curr_high_bar - major_high_bar
@@ -357,14 +428,23 @@ if is_swing_high and smt_show
                                                         textcolor = smt_lbl_color, style = label.style_label_center,
                                                         size = smt_lbl_size) : na
                 
-                array.push(smt_lines_arr, l_smt)
-                if not na(l_lbl)
-                    array.push(smt_labels_arr, l_lbl)
+                float break_lvl = smt_break_mode == "SMC Swing Extreme (Min/Max)" ? 
+                                  math.max(major_high_price, curr_high_price) : curr_high_price
                 
-                while array.size(smt_lines_arr) > smt_max_lines
-                    line.delete(array.shift(smt_lines_arr))
-                while array.size(smt_labels_arr) > smt_max_lines
-                    label.delete(array.shift(smt_labels_arr))
+                array.push(active_smt_lines, l_smt)
+                array.push(active_smt_labels, l_lbl)
+                array.push(active_smt_is_bull, false)
+                array.push(active_smt_break_lvl, break_lvl)
+                array.push(active_smt_create_bar, bar_index)
+                
+                while array.size(active_smt_lines) > smt_max_lines
+                    line.delete(array.shift(active_smt_lines))
+                    label lbl_shift = array.shift(active_smt_labels)
+                    if not na(lbl_shift)
+                        label.delete(lbl_shift)
+                    array.shift(active_smt_is_bull)
+                    array.shift(active_smt_break_lvl)
+                    array.shift(active_smt_create_bar)
     
     if na(major_high_price) or has_intervening_low
         major_high_price := curr_high_price

@@ -170,75 +170,85 @@ barcolor(psp_color, title = "Warna Candle PSP")
 // # ========================================================================= #
 
 //#region SMT Logic
-// Deteksi Structural Pivot menggunakan ta.pivotlow dan ta.pivothigh
+// Deteksi Swing Point menggunakan ta.pivotlow dan ta.pivothigh pada timeframe chart aktif
 float pl_pivot = ta.pivotlow(low, smt_left, smt_right)
 float ph_pivot = ta.pivothigh(high, smt_left, smt_right)
 
 bool is_swing_low  = not na(pl_pivot)
 bool is_swing_high = not na(ph_pivot)
 
-// Offset bar terjadinya pivot
 int p_offset = smt_right
 
-// Variabel memori untuk swing low sebelumnya
-var float prev_pl_price  = na
-var int   prev_pl_time   = na
-var int   prev_pl_bar    = na
-var float prev_pl_s1_low = na
-var float prev_pl_s2_low = na
-var float prev_pl_s3_low = na
+// Fungsi pembaca harga ekstrim korelasi (dengan toleransi ±1 bar agar akurat menangkap ujung wick)
+f_corr_low(float src, int off) =>
+    math.min(src[off], math.min(src[off + 1], src[math.max(0, off - 1)]))
 
-// Variabel memori untuk swing high sebelumnya
-var float prev_ph_price   = na
-var int   prev_ph_time    = na
-var int   prev_ph_bar     = na
-var float prev_ph_s1_high = na
-var float prev_ph_s2_high = na
-var float prev_ph_s3_high = na
+f_corr_high(float src, int off) =>
+    math.max(src[off], math.max(src[off + 1], src[math.max(0, off - 1)]))
 
-// Array storage untuk visual garis & label
+// Variabel memori Major Swing Low
+var float major_low_price   = na
+var int   major_low_time    = na
+var int   major_low_bar     = na
+var float major_low_s1      = na
+var float major_low_s2      = na
+var float major_low_s3      = na
+
+// Variabel memori Major Swing High
+var float major_high_price  = na
+var int   major_high_time   = na
+var int   major_high_bar    = na
+var float major_high_s1     = na
+var float major_high_s2     = na
+var float major_high_s3     = na
+
+// Array storage visual lines & labels
 var line[]  smt_lines_arr  = array.new_line()
 var label[] smt_labels_arr = array.new_label()
 
-// ── Evaluasi SMT Bullish (Swing Low) ──────────────────────────
+// ── Evaluasi SMT Bullish (Major Swing Low Divergence) ─────────
 bool is_smt_bull = false
 string bull_pair_txt = ""
 
 if is_swing_low and smt_show
-    float curr_pl_price  = low[p_offset]
-    int   curr_pl_time   = time[p_offset]
-    int   curr_pl_bar    = bar_index[p_offset]
-    float curr_s1_low    = s1_L[p_offset]
-    float curr_s2_low    = s2_L[p_offset]
-    float curr_s3_low    = s3_L[p_offset]
+    float curr_low_price = low[p_offset]
+    int   curr_low_time  = time[p_offset]
+    int   curr_low_bar   = bar_index[p_offset]
+    float curr_s1_low    = f_corr_low(s1_L, p_offset)
+    float curr_s2_low    = f_corr_low(s2_L, p_offset)
+    float curr_s3_low    = f_corr_low(s3_L, p_offset)
     
-    // Periksa apakah swing low sebelumnya ada dan jaraknya valid
-    if not na(prev_pl_price)
-        int bar_distance = curr_pl_bar - prev_pl_bar
+    // Syarat SMC Presisi: Harus ada Major Swing High (Puncak) di antara kedua Swing Low (Lembah)!
+    bool has_intervening_high = not na(major_high_bar) and (major_high_bar > major_low_bar)
+    
+    if not na(major_low_price) and has_intervening_high
+        int bar_distance = curr_low_bar - major_low_bar
         if bar_distance >= smt_min_bars and bar_distance <= smt_max_bars
             bool s1_div = false
             bool s2_div = false
             bool s3_div = false
             
-            // Slot 1
-            if enable_s1 and not na(prev_pl_s1_low) and not na(curr_s1_low)
-                if (curr_pl_price < prev_pl_price and curr_s1_low > prev_pl_s1_low) or (curr_pl_price > prev_pl_price and curr_s1_low < prev_pl_s1_low)
+            // Slot 1: Evaluasi divergensi terhadap Major Swing Low sebelumnya
+            if enable_s1 and not na(major_low_s1) and not na(curr_s1_low)
+                // Kasus 1 (Sweep): Chart Utama Lower Low, Correlated Pair Higher Low
+                // Kasus 2 (Holding): Chart Utama Higher Low, Correlated Pair Lower Low
+                if (curr_low_price < major_low_price and curr_s1_low > major_low_s1) or (curr_low_price > major_low_price and curr_s1_low < major_low_s1)
                     s1_div := true
             
             // Slot 2
-            if enable_s2 and not na(prev_pl_s2_low) and not na(curr_s2_low)
-                if (curr_pl_price < prev_pl_price and curr_s2_low > prev_pl_s2_low) or (curr_pl_price > prev_pl_price and curr_s2_low < prev_pl_s2_low)
+            if enable_s2 and not na(major_low_s2) and not na(curr_s2_low)
+                if (curr_low_price < major_low_price and curr_s2_low > major_low_s2) or (curr_low_price > major_low_price and curr_s2_low < major_low_s2)
                     s2_div := true
             
             // Slot 3
-            if enable_s3 and not na(prev_pl_s3_low) and not na(curr_s3_low)
-                if (curr_pl_price < prev_pl_price and curr_s3_low > prev_pl_s3_low) or (curr_pl_price > prev_pl_price and curr_s3_low < prev_pl_s3_low)
+            if enable_s3 and not na(major_low_s3) and not na(curr_s3_low)
+                if (curr_low_price < major_low_price and curr_s3_low > major_low_s3) or (curr_low_price > major_low_price and curr_s3_low < major_low_s3)
                     s3_div := true
             
             if s1_div or s2_div or s3_div
                 is_smt_bull := true
                 
-                // Rangkai nama korelasi murni (langsung nama pair korelasi saja!)
+                // Rangkai nama pair korelasi murni
                 if s1_div
                     bull_pair_txt := s1_name
                 if s2_div
@@ -246,15 +256,15 @@ if is_swing_low and smt_show
                 if s3_div
                     bull_pair_txt := bull_pair_txt == "" ? s3_name : bull_pair_txt + " & " + s3_name
                 
-                // Buat garis SMT tepat di antara dua titik swing low
-                line l_smt = line.new(x1 = prev_pl_time, y1 = prev_pl_price,
-                                      x2 = curr_pl_time, y2 = curr_pl_price,
+                // Buat garis SMT tepat menghubungkan kedua wick major swing low
+                line l_smt = line.new(x1 = major_low_time, y1 = major_low_price,
+                                      x2 = curr_low_time, y2 = curr_low_price,
                                       xloc = xloc.bar_time, color = smt_line_color,
                                       width = smt_line_width, style = smt_line_style)
                 
-                // Label tepat di tengah garis dengan teks langsung nama pair korelasi
-                int   mid_x = int(math.avg(prev_pl_time, curr_pl_time))
-                float mid_y = math.avg(prev_pl_price, curr_pl_price)
+                // Label tepat di tengah garis dengan nama pair korelasi
+                int   mid_x = int(math.avg(major_low_time, curr_low_time))
+                float mid_y = math.avg(major_low_price, curr_low_price)
                 
                 label l_lbl = smt_lbl_show ? label.new(x = mid_x, y = mid_y, text = bull_pair_txt,
                                                         xloc = xloc.bar_time, color = smt_lbl_bg,
@@ -270,47 +280,58 @@ if is_swing_low and smt_show
                 while array.size(smt_labels_arr) > smt_max_lines
                     label.delete(array.shift(smt_labels_arr))
     
-    // Perbarui state swing low
-    prev_pl_price  := curr_pl_price
-    prev_pl_time   := curr_pl_time
-    prev_pl_bar    := curr_pl_bar
-    prev_pl_s1_low := curr_s1_low
-    prev_pl_s2_low := curr_s2_low
-    prev_pl_s3_low := curr_s3_low
+    // Perbarui state Major Swing Low
+    if na(major_low_price) or has_intervening_high
+        major_low_price := curr_low_price
+        major_low_time  := curr_low_time
+        major_low_bar   := curr_low_bar
+        major_low_s1    := curr_s1_low
+        major_low_s2    := curr_s2_low
+        major_low_s3    := curr_s3_low
+    else if curr_low_price < major_low_price
+        major_low_price := curr_low_price
+        major_low_time  := curr_low_time
+        major_low_bar   := curr_low_bar
+        major_low_s1    := curr_s1_low
+        major_low_s2    := curr_s2_low
+        major_low_s3    := curr_s3_low
 
 
-// ── Evaluasi SMT Bearish (Swing High) ─────────────────────────
+// ── Evaluasi SMT Bearish (Major Swing High Divergence) ────────
 bool is_smt_bear = false
 string bear_pair_txt = ""
 
 if is_swing_high and smt_show
-    float curr_ph_price   = high[p_offset]
-    int   curr_ph_time    = time[p_offset]
-    int   curr_ph_bar     = bar_index[p_offset]
-    float curr_s1_high    = s1_H[p_offset]
-    float curr_s2_high    = s2_H[p_offset]
-    float curr_s3_high    = s3_H[p_offset]
+    float curr_high_price = high[p_offset]
+    int   curr_high_time  = time[p_offset]
+    int   curr_high_bar   = bar_index[p_offset]
+    float curr_s1_high    = f_corr_high(s1_H, p_offset)
+    float curr_s2_high    = f_corr_high(s2_H, p_offset)
+    float curr_s3_high    = f_corr_high(s3_H, p_offset)
     
-    if not na(prev_ph_price)
-        int bar_distance = curr_ph_bar - prev_ph_bar
+    // Syarat SMC Presisi: Harus ada Major Swing Low (Lembah) di antara kedua Swing High (Puncak)!
+    bool has_intervening_low = not na(major_low_bar) and (major_low_bar > major_high_bar)
+    
+    if not na(major_high_price) and has_intervening_low
+        int bar_distance = curr_high_bar - major_high_bar
         if bar_distance >= smt_min_bars and bar_distance <= smt_max_bars
             bool s1_div = false
             bool s2_div = false
             bool s3_div = false
             
             // Slot 1
-            if enable_s1 and not na(prev_ph_s1_high) and not na(curr_s1_high)
-                if (curr_ph_price > prev_ph_price and curr_s1_high < prev_ph_s1_high) or (curr_ph_price < prev_ph_price and curr_s1_high > prev_ph_s1_high)
+            if enable_s1 and not na(major_high_s1) and not na(curr_s1_high)
+                if (curr_high_price > major_high_price and curr_s1_high < major_high_s1) or (curr_high_price < major_high_price and curr_s1_high > major_high_s1)
                     s1_div := true
             
             // Slot 2
-            if enable_s2 and not na(prev_ph_s2_high) and not na(curr_s2_high)
-                if (curr_ph_price > prev_ph_price and curr_s2_high < prev_ph_s2_high) or (curr_ph_price < prev_ph_price and curr_s2_high > prev_ph_s2_high)
+            if enable_s2 and not na(major_high_s2) and not na(curr_s2_high)
+                if (curr_high_price > major_high_price and curr_s2_high < major_high_s2) or (curr_high_price < major_high_price and curr_s2_high > major_high_s2)
                     s2_div := true
             
             // Slot 3
-            if enable_s3 and not na(prev_ph_s3_high) and not na(curr_s3_high)
-                if (curr_ph_price > prev_ph_price and curr_s3_high < prev_ph_s3_high) or (curr_ph_price < prev_ph_price and curr_s3_high > prev_ph_s3_high)
+            if enable_s3 and not na(major_high_s3) and not na(curr_s3_high)
+                if (curr_high_price > major_high_price and curr_s3_high < major_high_s3) or (curr_high_price < major_high_price and curr_s3_high > major_high_s3)
                     s3_div := true
             
             if s1_div or s2_div or s3_div
@@ -323,13 +344,13 @@ if is_swing_high and smt_show
                 if s3_div
                     bear_pair_txt := bear_pair_txt == "" ? s3_name : bear_pair_txt + " & " + s3_name
                 
-                line l_smt = line.new(x1 = prev_ph_time, y1 = prev_ph_price,
-                                      x2 = curr_ph_time, y2 = curr_ph_price,
+                line l_smt = line.new(x1 = major_high_time, y1 = major_high_price,
+                                      x2 = curr_high_time, y2 = curr_high_price,
                                       xloc = xloc.bar_time, color = smt_line_color,
                                       width = smt_line_width, style = smt_line_style)
                 
-                int   mid_x = int(math.avg(prev_ph_time, curr_ph_time))
-                float mid_y = math.avg(prev_ph_price, curr_ph_price)
+                int   mid_x = int(math.avg(major_high_time, curr_high_time))
+                float mid_y = math.avg(major_high_price, curr_high_price)
                 
                 label l_lbl = smt_lbl_show ? label.new(x = mid_x, y = mid_y, text = bear_pair_txt,
                                                         xloc = xloc.bar_time, color = smt_lbl_bg,
@@ -345,12 +366,20 @@ if is_swing_high and smt_show
                 while array.size(smt_labels_arr) > smt_max_lines
                     label.delete(array.shift(smt_labels_arr))
     
-    prev_ph_price   := curr_ph_price
-    prev_ph_time    := curr_ph_time
-    prev_ph_bar     := curr_ph_bar
-    prev_ph_s1_high := curr_s1_high
-    prev_ph_s2_high := curr_s2_high
-    prev_ph_s3_high := curr_s3_high
+    if na(major_high_price) or has_intervening_low
+        major_high_price := curr_high_price
+        major_high_time  := curr_high_time
+        major_high_bar   := curr_high_bar
+        major_high_s1    := curr_s1_high
+        major_high_s2    := curr_s2_high
+        major_high_s3    := curr_s3_high
+    else if curr_high_price > major_high_price
+        major_high_price := curr_high_price
+        major_high_time  := curr_high_time
+        major_high_bar   := curr_high_bar
+        major_high_s1    := curr_s1_high
+        major_high_s2    := curr_s2_high
+        major_high_s3    := curr_s3_high
 //#endregion
 
 

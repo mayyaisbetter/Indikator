@@ -38,10 +38,7 @@ f_short_name(string sym) =>
 // # ========================================================================= #
 
 //#region Correlated Symbols
-g_sym         = "📊 Simbol Korelasi (Maks. 3 Pair)"
-use_custom_tf = input.bool(false, "Gunakan Custom Timeframe?", group = g_sym, tooltip = "Jika aktif, data simbol korelasi diambil dari timeframe khusus. Jika mati, mengikuti timeframe chart saat ini.")
-custom_tf     = input.timeframe("60", "Custom Timeframe", group = g_sym)
-target_tf     = use_custom_tf ? custom_tf : timeframe.period
+g_sym         = "📊 Simbol Korelasi (Maks. 3 Pair - Otomatis Ikut Timeframe Chart)"
 
 // Slot 1
 enable_s1     = input.bool(true, "Aktif", inline = "s1", group = g_sym)
@@ -74,11 +71,11 @@ smt_line_color     = input.color(color_c_red, "Warna Garis SMT", inline = "smt_l
 smt_line_style_str = input.string("Solid", "Gaya Garis", options = ["Solid", "Dashed", "Dotted"], inline = "smt_l", group = g_smt)
 smt_line_width     = input.int(2, "Lebar", minval = 1, maxval = 4, inline = "smt_l", group = g_smt)
 
-smt_left           = input.int(4, "Swing Lookback (Kiri)", minval = 1, maxval = 20, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kiri untuk mendeteksi swing pivot")
-smt_right          = input.int(1, "Konfirmasi (Kanan)", minval = 1, maxval = 10, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kanan untuk konfirmasi swing pivot")
-smt_min_bars       = input.int(3, "Min. Jarak Bar", minval = 1, maxval = 20, inline = "smt_dist", group = g_smt, tooltip = "Jarak minimum candle antar kedua swing point agar tidak bertumpuk")
-smt_max_bars       = input.int(60, "Maks. Jarak Bar", minval = 5, maxval = 200, inline = "smt_dist", group = g_smt, tooltip = "Jarak maksimum candle antar kedua swing point untuk relevansi struktur market")
-smt_max_lines      = input.int(5, "Maksimum Garis", minval = 1, maxval = 20, group = g_smt)
+smt_left           = input.int(2, "Swing Lookback (Kiri)", minval = 1, maxval = 10, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kiri untuk mendeteksi swing pivot (Default 2 untuk mendeteksi struktur 3-5 bar fractal)")
+smt_right          = input.int(1, "Konfirmasi (Kanan)", minval = 1, maxval = 5, inline = "smt_sw", group = g_smt, tooltip = "Jumlah bar di sebelah kanan untuk konfirmasi swing pivot (Default 1)")
+smt_min_bars       = input.int(2, "Min. Jarak Bar", minval = 1, maxval = 10, inline = "smt_dist", group = g_smt, tooltip = "Jarak minimum candle antar kedua swing point agar tidak bertumpuk")
+smt_max_bars       = input.int(40, "Maks. Jarak Bar", minval = 5, maxval = 100, inline = "smt_dist", group = g_smt, tooltip = "Jarak maksimum candle antar kedua swing point untuk relevansi struktur market")
+smt_max_lines      = input.int(3, "Maksimum Garis", minval = 1, maxval = 10, group = g_smt, tooltip = "Batasi jumlah garis di chart agar tetap bersih dan fokus pada SMT terkini")
 
 smt_lbl_show       = input.bool(true, "Tampilkan Label SMT", inline = "smt_lbl", group = g_smt)
 smt_lbl_size_str   = input.string("Normal", "Ukuran", options = ["Tiny", "Small", "Normal", "Large"], inline = "smt_lbl", group = g_smt)
@@ -102,23 +99,24 @@ psp_bear_color     = input.color(color_c_red,   "Warna Bearish PSP", inline = "p
 
 
 // # ========================================================================= #
-// # |   Data Hub: Fetch Correlated Pairs (Optimized Bundling)   |
+// # |   Data Hub: Fetch Correlated Pairs (100% Mengikuti Timeframe Chart)   |
 // # ========================================================================= #
 
 //#region Data Fetching
-[t_o1, t_h1, t_l1, t_c1] = request.security(enable_s1 ? sym1 : syminfo.tickerid, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off)
+// Menggunakan timeframe "" menjamin data korelasi selalu 100% identik dengan timeframe chart aktif (1m, 5m, 1h, 4h, Daily, dll.)
+[t_o1, t_h1, t_l1, t_c1] = request.security(enable_s1 ? sym1 : syminfo.tickerid, "", [open, high, low, close], lookahead = barmerge.lookahead_off)
 raw_o1 = enable_s1 ? t_o1 : float(na)
 raw_h1 = enable_s1 ? t_h1 : float(na)
 raw_l1 = enable_s1 ? t_l1 : float(na)
 raw_c1 = enable_s1 ? t_c1 : float(na)
 
-[t_o2, t_h2, t_l2, t_c2] = request.security(enable_s2 ? sym2 : syminfo.tickerid, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off)
+[t_o2, t_h2, t_l2, t_c2] = request.security(enable_s2 ? sym2 : syminfo.tickerid, "", [open, high, low, close], lookahead = barmerge.lookahead_off)
 raw_o2 = enable_s2 ? t_o2 : float(na)
 raw_h2 = enable_s2 ? t_h2 : float(na)
 raw_l2 = enable_s2 ? t_l2 : float(na)
 raw_c2 = enable_s2 ? t_c2 : float(na)
 
-[t_o3, t_h3, t_l3, t_c3] = request.security(enable_s3 ? sym3 : syminfo.tickerid, target_tf, [open, high, low, close], lookahead = barmerge.lookahead_off)
+[t_o3, t_h3, t_l3, t_c3] = request.security(enable_s3 ? sym3 : syminfo.tickerid, "", [open, high, low, close], lookahead = barmerge.lookahead_off)
 raw_o3 = enable_s3 ? t_o3 : float(na)
 raw_h3 = enable_s3 ? t_h3 : float(na)
 raw_l3 = enable_s3 ? t_l3 : float(na)

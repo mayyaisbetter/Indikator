@@ -11,6 +11,7 @@ indicator("HTF Candle & Asia Range [Mayya]", shorttitle="HTF & Asia [Mayya]", ov
 showHTFCandle     = input.bool(true, "Tampilkan HTF Candle", group="Modul Utama")
 showAsiaRange     = input.bool(true, "Tampilkan Asia Range", group="Modul Utama")
 showDailyDividers = input.bool(true, "Tampilkan Garis Harian (Daily Dividers)", group="Modul Utama")
+showPSP           = input.bool(true, "Tampilkan Price Symmetry Pivot (PSP)", group="Modul Utama")
 
 // # ========================================================================= #
 // # |   Constants   |
@@ -21,6 +22,8 @@ color_white       = color.white
 color_black       = color.black
 color_gray        = color.gray
 color_transparent = #ffffff00
+color_c_green     = #089981
+color_c_red       = #f23645
 
 border_style_none   = 'None'
 border_style_solid  = '────'
@@ -144,6 +147,24 @@ daily_div_label_show    = input.bool(true, "Tampilkan Nama Hari", inline = "dd_l
 daily_div_label_pos     = input.string("Top", "Posisi Teks", options = ["Top", "Bottom", "Middle"], inline = "dd_lbl", group = g_daily_div, tooltip = "Posisi teks nama hari: Di atas harga tertinggi hari, di bawah harga terendah hari, atau di tengah-tengah rentang harga")
 daily_div_label_size    = input.string("Small", "Ukuran Teks", options = ["Tiny", "Small", "Normal", "Large"], inline = "dd_lbl_st", group = g_daily_div)
 daily_div_label_color   = input.color(color_gray, "Warna Teks", inline = "dd_lbl_st", group = g_daily_div)
+
+// # PSP (Price Symmetry Pivot) Settings ------------------------------------ #
+g_psp_sym               = "PSP - Simbol Korelasi (Maks. 3 Pair)"
+enable_s1               = input.bool(true, "Aktif", inline = "s1", group = g_psp_sym)
+sym1                    = input.symbol("CME_MINI:NQ1!", "Pair 1", inline = "s1", group = g_psp_sym)
+inv1                    = input.bool(false, "Inverse", inline = "s1", group = g_psp_sym, tooltip = "Balikkan pergerakan harga untuk aset yang berkorelasi negatif (misal DXY)")
+
+enable_s2               = input.bool(true, "Aktif", inline = "s2", group = g_psp_sym)
+sym2                    = input.symbol("CME_MINI:ES1!", "Pair 2", inline = "s2", group = g_psp_sym)
+inv2                    = input.bool(false, "Inverse", inline = "s2", group = g_psp_sym)
+
+enable_s3               = input.bool(false, "Aktif", inline = "s3", group = g_psp_sym)
+sym3                    = input.symbol("CBOT_MINI:YM1!", "Pair 3", inline = "s3", group = g_psp_sym)
+inv3                    = input.bool(false, "Inverse", inline = "s3", group = g_psp_sym)
+
+g_psp_style             = "PSP - Pewarnaan Candle"
+psp_bull_color          = input.color(color_c_green, "Warna Bullish PSP", inline = "psp_col", group = g_psp_style)
+psp_bear_color          = input.color(color_c_red,   "Warna Bearish PSP", inline = "psp_col", group = g_psp_style)
 //#endregion
 
 // # ========================================================================= #
@@ -861,4 +882,63 @@ else
     day_low           := na
     current_day_label := na
     last_day_bar      := -1
+//#endregion
+
+// # ========================================================================= #
+// # |   Price Symmetry Pivot (PSP) Engine                                     |
+// # ========================================================================= #
+
+//#region PSP Engine
+// Data Fetching: 100% mengikuti timeframe chart aktif ("") & hanya ambil series yang dibutuhkan ([open, close])
+[t_o1, t_c1] = request.security(showPSP and enable_s1 ? sym1 : syminfo.tickerid, "", [open, close], lookahead = barmerge.lookahead_off)
+raw_o1 = (showPSP and enable_s1) ? t_o1 : float(na)
+raw_c1 = (showPSP and enable_s1) ? t_c1 : float(na)
+
+[t_o2, t_c2] = request.security(showPSP and enable_s2 ? sym2 : syminfo.tickerid, "", [open, close], lookahead = barmerge.lookahead_off)
+raw_o2 = (showPSP and enable_s2) ? t_o2 : float(na)
+raw_c2 = (showPSP and enable_s2) ? t_c2 : float(na)
+
+[t_o3, t_c3] = request.security(showPSP and enable_s3 ? sym3 : syminfo.tickerid, "", [open, close], lookahead = barmerge.lookahead_off)
+raw_o3 = (showPSP and enable_s3) ? t_o3 : float(na)
+raw_c3 = (showPSP and enable_s3) ? t_c3 : float(na)
+
+// Handle Inverse transformation (balik arah candle jika inverse aktif)
+s1_O = inv1 ? -raw_c1 : raw_o1
+s1_C = inv1 ? -raw_o1 : raw_c1
+
+s2_O = inv2 ? -raw_c2 : raw_o2
+s2_C = inv2 ? -raw_o2 : raw_c2
+
+s3_O = inv3 ? -raw_c3 : raw_o3
+s3_C = inv3 ? -raw_o3 : raw_c3
+
+// Deteksi Divergensi Candle PSP
+bool psp_bull_s1 = showPSP and enable_s1 and not na(s1_C) and (close > open) and (s1_C < s1_O)
+bool psp_bull_s2 = showPSP and enable_s2 and not na(s2_C) and (close > open) and (s2_C < s2_O)
+bool psp_bull_s3 = showPSP and enable_s3 and not na(s3_C) and (close > open) and (s3_C < s3_O)
+bool is_psp_bull = psp_bull_s1 or psp_bull_s2 or psp_bull_s3
+
+bool psp_bear_s1 = showPSP and enable_s1 and not na(s1_C) and (close < open) and (s1_C > s1_O)
+bool psp_bear_s2 = showPSP and enable_s2 and not na(s2_C) and (close < open) and (s2_C > s2_O)
+bool psp_bear_s3 = showPSP and enable_s3 and not na(s3_C) and (close < open) and (s3_C > s3_O)
+bool is_psp_bear = psp_bear_s1 or psp_bear_s2 or psp_bear_s3
+
+// Terapkan Pewarnaan Candle PSP (Default: Hijau Bullish, Merah Bearish)
+color psp_color = na
+if showPSP
+    if is_psp_bull
+        psp_color := psp_bull_color
+    else if is_psp_bear
+        psp_color := psp_bear_color
+
+barcolor(psp_color, title = "Warna Candle PSP")
+//#endregion
+
+// # ========================================================================= #
+// # |   Alerts: Price Symmetry Pivot (PSP)                                    |
+// # ========================================================================= #
+
+//#region Alerts PSP
+alertcondition(showPSP and is_psp_bull, "Bullish PSP Candle", "Bullish PSP Candle terdeteksi pada {{ticker}}!")
+alertcondition(showPSP and is_psp_bear, "Bearish PSP Candle", "Bearish PSP Candle terdeteksi pada {{ticker}}!")
 //#endregion
